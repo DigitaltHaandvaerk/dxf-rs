@@ -1743,7 +1743,7 @@ mod tests {
             common: Default::default(),
             specific: EntityType::Line(Default::default()),
         };
-        ent.common.layer = "some-layer".to_owned();
+        "some-layer".clone_into(&mut ent.common.layer);
         drawing.add_entity(ent);
         assert_contains_pairs(
             &drawing,
@@ -1764,7 +1764,7 @@ mod tests {
             common: Default::default(),
             specific: EntityType::Line(Default::default()),
         };
-        ent.common.layer = "some-layer".to_owned();
+        "some-layer".clone_into(&mut ent.common.layer);
         drawing.add_entity(ent);
         assert_contains_pairs(
             &drawing,
@@ -3068,6 +3068,37 @@ mod tests {
         match x.items[0] {
             XDataItem::Str(ref s) => assert_eq!("some string", s),
             _ => panic!("expected a string"),
+        }
+    }
+
+    #[test]
+    fn read_multiple_x_data() {
+        let ent = read_entity(
+            "POLYLINE",
+            vec![
+                CodePair::new_str(1001, "Alpha"),
+                CodePair::new_str(1000, "a"),
+                CodePair::new_str(1001, "Beta"),
+                CodePair::new_str(1000, "b"),
+                CodePair::new_str(1001, "Gamma"),
+                CodePair::new_str(1000, "c"),
+            ],
+        );
+        // dbg!(&ent);
+        assert_eq!(ent.common.x_data.len(), 3);
+        for (i, x) in ent.common.x_data.iter().enumerate() {
+            let (name, val) = match i {
+                0 => ("Alpha", "a"),
+                1 => ("Beta", "b"),
+                2 => ("Gamma", "c"),
+                _ => panic!("should only have 3 items"),
+            };
+
+            assert_eq!(x.application_name, name);
+            match x.items[0] {
+                XDataItem::Str(ref a) => assert_eq!(a, val),
+                _ => panic!("Expected a string"),
+            }
         }
     }
 

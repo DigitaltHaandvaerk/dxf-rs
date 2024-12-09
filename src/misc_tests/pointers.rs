@@ -93,23 +93,23 @@ fn set_pointer_on_entity() {
     assert_eq!(Handle(0), material.common.handle);
 
     let material = drawing.add_object(material);
-    assert_eq!(Handle(0x10), material.common.handle);
+    assert_eq!(Handle(17), material.common.handle);
     line.common.set_material(material).ok().unwrap();
     drawing.add_entity(line);
 
     assert_contains_pairs(
         &drawing,
-        vec![CodePair::new_str(0, "MATERIAL"), CodePair::new_str(5, "10")],
+        vec![CodePair::new_str(0, "MATERIAL"), CodePair::new_str(5, "11")],
     );
 
     assert_contains_pairs(
         &drawing,
         vec![
             CodePair::new_str(0, "LINE"),
-            CodePair::new_str(5, "11"),
+            CodePair::new_str(5, "12"),
             CodePair::new_str(100, "AcDbEntity"),
             CodePair::new_str(8, "0"),
-            CodePair::new_str(347, "10"), // handle of `material`
+            CodePair::new_str(347, "11"), // handle of `material`
         ],
     );
 }

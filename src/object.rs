@@ -1765,7 +1765,7 @@ mod tests {
         drawing.add_object(obj);
         assert_contains_pairs(
             &drawing,
-            vec![CodePair::new_str(0, "IMAGEDEF"), CodePair::new_str(5, "10")],
+            vec![CodePair::new_str(0, "IMAGEDEF"), CodePair::new_str(5, "17")],
         );
     }
 
@@ -1982,7 +1982,7 @@ mod tests {
             &drawing,
             vec![
                 CodePair::new_str(0, "LIGHTLIST"),
-                CodePair::new_str(5, "10"),
+                CodePair::new_str(5, "17"),
                 CodePair::new_str(330, "A2"),
             ],
         );

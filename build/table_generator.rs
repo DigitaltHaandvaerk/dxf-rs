@@ -10,6 +10,7 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufReader, Write};
 use std::path::Path;
+use std::u64;
 
 pub fn generate_tables(generated_dir: &Path) {
     let element = load_xml();
@@ -318,6 +319,7 @@ fn generate_table_reader(fun: &mut String, element: &Element) {
 }
 
 fn generate_table_writer(fun: &mut String, element: &Element) {
+    // Panic if there are more tables than reserved handles
     fun.push_str(
         "pub(crate) fn add_table_code_pairs(drawing: &Drawing, pairs: &mut Vec<CodePair>, write_handles: bool) {\n",
     );
@@ -350,7 +352,9 @@ fn generate_table_writer(fun: &mut String, element: &Element) {
     fun.push_str("}\n");
     fun.push('\n');
 
+    let mut table_i = u64::MAX - 1;
     for table in &element.children {
+        table_i -= 1;
         let table_item = &table.children[0];
         fun.push_str("#[allow(clippy::cognitive_complexity)] // long function, no good way to simplify this\n");
         fun.push_str(&format!("fn add_{collection}_code_pairs(pairs: &mut Vec<CodePair>, drawing: &Drawing, write_handles: bool) {{\n", collection=attr(table, "Collection")));
@@ -368,15 +372,27 @@ fn generate_table_writer(fun: &mut String, element: &Element) {
         ));
 
         // TODO: assign and write table handles
-        // fun.push_str("    if write_handles {\n");
-        // fun.push_str("        pairs.push(CodePair::new_str(5, \"0\"));\n");
-        // fun.push_str("    }\n");
-        // fun.push_str("\n");
+        fun.push_str("    if write_handles {\n");
+        fun.push_str(&format!(
+            "        pairs.push(CodePair::new_str(5, \"{handle}\"));\n",
+            handle = format!("{:X}", table_i),
+        ));
+        fun.push_str("    }\n");
+        fun.push_str("\n");
 
         let item_type = name(table_item);
 
         fun.push_str("    pairs.push(CodePair::new_str(100, \"AcDbSymbolTable\"));\n");
         fun.push_str("    pairs.push(CodePair::new_i16(70, 0));\n");
+
+        let table_class_name = attr(table, "TableClassName");
+        if !table_class_name.is_empty() {
+            fun.push_str(&format!(
+                "    pairs.push(CodePair::new_str(100, \"{}\"));\n",
+                table_class_name
+            ));
+        }
+
         fun.push_str(&format!(
             "    for item in drawing.{collection}() {{\n",
             collection = attr(table, "Collection")

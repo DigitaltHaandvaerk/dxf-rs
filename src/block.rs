@@ -740,14 +740,14 @@ mod tests {
                 CodePair::new_str(3, "block-name"), // name again
                 CodePair::new_str(1, ""),           // x-ref name; empty = external
                 CodePair::new_str(0, "LINE"),       // first entity
-                CodePair::new_str(5, "12"),         // entity handle
+                CodePair::new_str(5, "13"),         // entity handle
             ],
         );
         assert_contains_pairs(
             &drawing,
             vec![
                 CodePair::new_str(0, "ENDBLK"),
-                CodePair::new_str(5, "10"), // endblk got handle, original block didn't
+                CodePair::new_str(5, "11"), // endblk got handle, original block didn't
                 CodePair::new_str(8, "0"),  // layer
                 CodePair::new_str(0, "ENDSEC"), // end of block
             ],

@@ -379,7 +379,7 @@ mod tests {
             &drawing,
             vec![
                 CodePair::new_str(9, "$HANDSEED"),
-                CodePair::new_str(5, "11"),
+                CodePair::new_str(5, "12"),
             ],
         );
     }
@@ -390,7 +390,7 @@ mod tests {
             "HEADER",
             vec![
                 CodePair::new_str(9, "$HANDSEED"),
-                CodePair::new_str(5, "11"),
+                CodePair::new_str(5, "18"),
             ],
         );
         drawing.add_entity(Entity::new(EntityType::Line(Line::new(
@@ -401,7 +401,7 @@ mod tests {
             &drawing,
             vec![
                 CodePair::new_str(9, "$HANDSEED"),
-                CodePair::new_str(5, "15"),
+                CodePair::new_str(5, "1C"),
             ],
         );
     }

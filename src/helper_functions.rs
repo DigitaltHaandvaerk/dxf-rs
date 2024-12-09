@@ -645,7 +645,11 @@ pub mod tests {
             println!("{:?}", pair);
         }
         let actual_index = try_find_index(&actual, &expected);
-        assert!(actual_index.is_some());
+        assert!(
+            actual_index.is_some(),
+            "expected pairs {:?} not found",
+            expected
+        );
     }
 
     pub fn assert_not_contains(drawing: &Drawing, contents: String) {

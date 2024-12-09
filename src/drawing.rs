@@ -202,14 +202,14 @@ impl Drawing {
         Ok(())
     }
     /// Writes a `Drawing` to disk, using a `BufWriter`.
-    pub fn save_file(&self, path: impl AsRef<Path>) -> DxfResult<()> {
+    pub fn save_file(&mut self, path: impl AsRef<Path>) -> DxfResult<()> {
         self.save_file_internal(path, true)
     }
     /// Writes a `Drawing` as binary to disk, using a `BufWriter`.
-    pub fn save_file_binary(&self, path: impl AsRef<Path>) -> DxfResult<()> {
+    pub fn save_file_binary(&mut self, path: impl AsRef<Path>) -> DxfResult<()> {
         self.save_file_internal(path, false)
     }
-    fn save_file_internal(&self, path: impl AsRef<Path>, as_ascii: bool) -> DxfResult<()> {
+    fn save_file_internal(&mut self, path: impl AsRef<Path>, as_ascii: bool) -> DxfResult<()> {
         let file = File::create(&path)?;
         let mut writer = BufWriter::new(file);
         self.save_internal(&mut writer, as_ascii)

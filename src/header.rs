@@ -379,7 +379,7 @@ mod tests {
             &drawing,
             vec![
                 CodePair::new_str(9, "$HANDSEED"),
-                CodePair::new_str(5, "12"),
+                CodePair::new_str(5, "1F"),
             ],
         );
     }

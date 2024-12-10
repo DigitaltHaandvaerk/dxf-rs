@@ -193,7 +193,7 @@ mod tests {
             &drawing,
             vec![
                 CodePair::new_str(0, "LAYER"),
-                CodePair::new_str(5, "11"),
+                CodePair::new_str(5, "1E"),
                 CodePair::new_str(100, "AcDbSymbolTableRecord"),
                 CodePair::new_str(100, "AcDbLayerTableRecord"),
                 CodePair::new_str(2, "layer-name"),

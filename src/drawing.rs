@@ -1204,8 +1204,8 @@ impl Drawing {
         };
 
         // Ensure block records are present
-        self.ensure_block_record_is_present("*MODEL_SPACE", model_block_handle);
         self.ensure_block_record_is_present("*PAPER_SPACE", paper_block_handle);
+        self.ensure_block_record_is_present("*MODEL_SPACE", model_block_handle);
     }
     fn normalize_layers(&mut self) {
         self.ensure_layer_is_present(&self.header.current_layer.clone());

@@ -1751,7 +1751,7 @@ mod tests {
             &drawing,
             vec![
                 CodePair::new_str(0, "LINE"),
-                CodePair::new_str(5, "11"),
+                CodePair::new_str(5, "1E"),
                 CodePair::new_str(8, "some-layer"),
                 CodePair::new_f64(10, 0.0),
             ],
@@ -1772,7 +1772,7 @@ mod tests {
             &drawing,
             vec![
                 CodePair::new_str(0, "LINE"),
-                CodePair::new_str(5, "11"),
+                CodePair::new_str(5, "1E"),
                 CodePair::new_str(100, "AcDbEntity"),
                 CodePair::new_str(8, "some-layer"),
                 CodePair::new_str(100, "AcDbLine"),
@@ -2094,7 +2094,7 @@ mod tests {
             &drawing,
             vec![
                 CodePair::new_str(0, "LINE"),
-                CodePair::new_str(5, "11"),
+                CodePair::new_str(5, "1E"),
                 CodePair::new_str(330, "A2"),
             ],
         );
@@ -2437,7 +2437,7 @@ mod tests {
             &drawing,
             vec![
                 CodePair::new_str(0, "POLYLINE"), // polyline
-                CodePair::new_str(5, "14"),
+                CodePair::new_str(5, "21"),
                 CodePair::new_str(100, "AcDbEntity"),
                 CodePair::new_str(8, "0"),
                 CodePair::new_str(100, "AcDb2dPolyline"),
@@ -2446,7 +2446,7 @@ mod tests {
                 CodePair::new_f64(20, 0.0),
                 CodePair::new_f64(30, 0.0),
                 CodePair::new_str(0, "VERTEX"), // vertex 1
-                CodePair::new_str(5, "11"),
+                CodePair::new_str(5, "1E"),
                 CodePair::new_str(100, "AcDbEntity"),
                 CodePair::new_str(8, "0"),
                 CodePair::new_str(100, "AcDbVertex"),
@@ -2457,7 +2457,7 @@ mod tests {
                 CodePair::new_i16(70, 0),
                 CodePair::new_f64(50, 0.0),
                 CodePair::new_str(0, "VERTEX"), // vertex 2
-                CodePair::new_str(5, "12"),
+                CodePair::new_str(5, "1F"),
                 CodePair::new_str(100, "AcDbEntity"),
                 CodePair::new_str(8, "0"),
                 CodePair::new_str(100, "AcDbVertex"),
@@ -2468,7 +2468,7 @@ mod tests {
                 CodePair::new_i16(70, 0),
                 CodePair::new_f64(50, 0.0),
                 CodePair::new_str(0, "VERTEX"), // vertex 3
-                CodePair::new_str(5, "13"),
+                CodePair::new_str(5, "20"),
                 CodePair::new_str(100, "AcDbEntity"),
                 CodePair::new_str(8, "0"),
                 CodePair::new_str(100, "AcDbVertex"),
@@ -2504,7 +2504,7 @@ mod tests {
             &drawing,
             vec![
                 CodePair::new_str(0, "POLYLINE"), // polyline
-                CodePair::new_str(5, "12"),
+                CodePair::new_str(5, "1F"),
                 CodePair::new_str(100, "AcDbEntity"),
                 CodePair::new_str(8, "0"),
                 CodePair::new_str(100, "AcDb3dPolyline"), // 3d = true
@@ -2514,7 +2514,7 @@ mod tests {
                 CodePair::new_f64(30, 0.0),
                 CodePair::new_i16(70, 8),       // 3d = true
                 CodePair::new_str(0, "VERTEX"), // vertex 1
-                CodePair::new_str(5, "11"),
+                CodePair::new_str(5, "1E"),
                 CodePair::new_str(100, "AcDbEntity"),
                 CodePair::new_str(8, "0"),
                 CodePair::new_str(100, "AcDbVertex"),
@@ -3291,7 +3291,7 @@ mod tests {
         file.add_entity(Entity::new(EntityType::MLine(mline)));
         file.normalize();
         let objects = file.objects().collect::<Vec<_>>();
-        assert_eq!(1, objects.len());
+        assert_eq!(2, objects.len());
         match objects[0].specific {
             ObjectType::MLineStyle(ref ml) => assert_eq!("style name", ml.style_name),
             _ => panic!("expected an mline style"),

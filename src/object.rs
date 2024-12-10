@@ -1764,7 +1764,7 @@ mod tests {
         drawing.add_object(obj);
         assert_contains_pairs(
             &drawing,
-            vec![CodePair::new_str(0, "IMAGEDEF"), CodePair::new_str(5, "11")],
+            vec![CodePair::new_str(0, "IMAGEDEF"), CodePair::new_str(5, "1E")],
         );
     }
 
@@ -1981,7 +1981,7 @@ mod tests {
             &drawing,
             vec![
                 CodePair::new_str(0, "LIGHTLIST"),
-                CodePair::new_str(5, "11"),
+                CodePair::new_str(5, "1E"),
                 CodePair::new_str(330, "A2"),
             ],
         );
@@ -2068,6 +2068,9 @@ mod tests {
             vec![
                 CodePair::new_str(0, "SECTION"),
                 CodePair::new_str(2, "OBJECTS"),
+                CodePair::new_str(0, "DICTIONARY"),
+                CodePair::new_str(5, "1D"),
+                CodePair::new_str(100, "AcDbDictionary"),
                 CodePair::new_str(0, "ENDSEC"),
             ],
         );
@@ -2079,6 +2082,11 @@ mod tests {
             vec![
                 CodePair::new_str(0, "SECTION"),
                 CodePair::new_str(2, "OBJECTS"),
+                CodePair::new_str(0, "DICTIONARY"),
+                CodePair::new_str(5, "1D"),
+                CodePair::new_str(100, "AcDbDictionary"),
+                CodePair::new_i16(280, 0),
+                CodePair::new_i16(281, 0),
                 CodePair::new_str(0, "ACAD_PROXY_OBJECT"),
             ],
         );

@@ -105,7 +105,7 @@
             <Field Name="text_strings" Code="9" Type="String" DefaultValue="vec![]" AllowMultiples="true" MinVersion="R13" />
         </TableItem>
     </Table>
-        <Table Collection="layers" TypeString="LAYER">
+    <Table Collection="layers" TypeString="LAYER">
         <TableItem Name="Layer" ClassName="AcDbLayerTableRecord">
             <Field Name="color" Code="62" Type="Color" DefaultValue="Color::from_index(7)" ReadConverter="read_color_value(&amp;mut item, {})" WriteConverter="{}.writable_color_value(item)" />
             <Field Name="line_type_name" Code="6" Type="String" DefaultValue='String::from("CONTINUOUS")' WriteConverter="&amp;{}" />
@@ -179,12 +179,14 @@
             <Field Name="grid_spacing" Code="15" Type="Vector" DefaultValue="Vector::new(1.0, 1.0, 0.0)" CodeOverrides="15,25" />
             <Field Name="view_direction" Code="16" Type="Vector" DefaultValue="Vector::z_axis()" CodeOverrides="16,26,36" />
             <Field Name="target_view_point" Code="17" Type="Point" DefaultValue="Point::origin()" CodeOverrides="17,27,37" />
-            <Field Name="view_height" Code="40" Type="f64" DefaultValue="1.0" MaxVersion="R2004" />
-            <Field Name="view_port_aspect_ratio" Code="41" Type="f64" DefaultValue="1.0" MaxVersion="R2004" />
+            <!-- Reference error in the DXF spec - it is only working with 40 and not 45 -->
+            <Field Name="view_height" Code="40" Type="f64" DefaultValue="1.0" />
+            <Field Name="view_port_aspect_ratio" Code="41" Type="f64" DefaultValue="1.0" />
             <Field Name="lens_length" Code="42" Type="f64" DefaultValue="50.0" />
             <Field Name="front_clipping_plane" Code="43" Type="f64" DefaultValue="0.0" />
             <Field Name="back_clipping_plane" Code="44" Type="f64" DefaultValue="0.0" />
-            <Field Name="view_height" Code="45" Type="f64" DefaultValue="1.0" MinVersion="R2007" />
+            <!-- This is what the spec actually says, but it is only 40 working  -->
+            <!-- <Field Name="view_height" Code="45" Type="f64" DefaultValue="1.0" MinVersion="R2007" /> -->
             <Field Name="snap_rotation_angle" Code="50" Type="f64" DefaultValue="0.0" />
             <Field Name="view_twist_angle" Code="51" Type="f64" DefaultValue="0.0" />
             <Field Name="view_mode" Code="71" Type="ViewMode" DefaultValue="ViewMode::default()" ReadConverter="ViewMode::from_i16({})" WriteConverter="{}.raw() as i16" />

@@ -9,7 +9,6 @@ use std::collections::HashSet;
 use std::fs::File;
 use std::io::{BufReader, Write};
 use std::path::Path;
-use std::u64;
 
 pub fn generate_tables(generated_dir: &Path) {
     let element = load_xml();
@@ -349,18 +348,13 @@ fn generate_table_writer(fun: &mut String, element: &Element) {
     fun.push_str("}\n");
     fun.push('\n');
 
-    let mut table_i = u64::MAX - 1;
+    let mut table_i = 1;
     for table in &element.children {
-        table_i -= 1;
+        table_i += 1;
         let table_item = &table.children[0];
         fun.push_str("#[allow(clippy::cognitive_complexity)] // long function, no good way to simplify this\n");
         fun.push_str(&format!("fn add_{collection}_code_pairs(pairs: &mut Vec<CodePair>, drawing: &Drawing, write_handles: bool) {{\n", collection=attr(table, "Collection")));
-        // fun.push_str(&format!(
-        //     "    if !drawing.{collection}().any(|_| true) {{ // is empty\n",
-        //     collection = attr(table, "Collection")
-        // ));
-        // fun.push_str("        return; // nothing to add\n");
-        // fun.push_str("    }\n");
+
         fun.push('\n');
         fun.push_str("    pairs.push(CodePair::new_str(0, \"TABLE\"));\n");
         fun.push_str(&format!(
@@ -413,6 +407,14 @@ fn generate_table_writer(fun: &mut String, element: &Element) {
             fun.push_str(&format!("            pairs.push(CodePair::new_string(5, &DrawingItem::{item_type}(item).handle().as_string()));\n",
             item_type=item_type));
         }
+
+        // Add parent group code 330 if version is above AcadVersion::R2018 use the table_i handle
+        fun.push_str("            if drawing.header.version >= AcadVersion::R2018 {\n");
+        fun.push_str(&format!(
+            "                pairs.push(CodePair::new_string(330, \"{parent}\"));\n",
+            parent = format!("{:X}", table_i),
+        ));
+        fun.push_str("            }");
 
         fun.push_str("        }\n");
         fun.push('\n');

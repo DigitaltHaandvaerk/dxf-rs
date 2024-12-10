@@ -202,14 +202,14 @@ impl Drawing {
         Ok(())
     }
     /// Writes a `Drawing` to disk, using a `BufWriter`.
-    pub fn save_file(&mut self, path: impl AsRef<Path>) -> DxfResult<()> {
+    pub fn save_file(&self, path: impl AsRef<Path>) -> DxfResult<()> {
         self.save_file_internal(path, true)
     }
     /// Writes a `Drawing` as binary to disk, using a `BufWriter`.
-    pub fn save_file_binary(&mut self, path: impl AsRef<Path>) -> DxfResult<()> {
+    pub fn save_file_binary(&self, path: impl AsRef<Path>) -> DxfResult<()> {
         self.save_file_internal(path, false)
     }
-    fn save_file_internal(&mut self, path: impl AsRef<Path>, as_ascii: bool) -> DxfResult<()> {
+    fn save_file_internal(&self, path: impl AsRef<Path>, as_ascii: bool) -> DxfResult<()> {
         let file = File::create(&path)?;
         let mut writer = BufWriter::new(file);
         self.save_internal(&mut writer, as_ascii)
@@ -392,6 +392,7 @@ impl Drawing {
     /// Add a block to the `Drawing`.
     pub fn add_block(&mut self, mut block: Block) -> &Block {
         block.handle = self.next_handle();
+        block.end_blk_handle = self.next_handle();
         self.add_block_no_handle_set(block)
     }
     /// Removes the specified `Block` from the `Drawing`.
@@ -497,6 +498,7 @@ impl Drawing {
         self.ensure_text_styles();
         self.ensure_view_ports();
         self.ensure_ucs();
+        self.ensure_dictionary_element_is_present();
 
         self.__app_ids.sort_by(|a, b| a.name.cmp(&b.name));
         self.__block_records.sort_by(|a, b| a.name.cmp(&b.name));
@@ -744,12 +746,23 @@ impl Drawing {
             });
         }
     }
-    fn ensure_block_record_is_present(&mut self, name: &str) {
+    fn ensure_block_record_is_present(&mut self, name: &str, handle: Handle) {
         if !self.block_records().any(|b| b.name == name) {
             self.add_block_record(BlockRecord {
                 name: String::from(name),
+                __layout_handle: handle,
                 ..Default::default()
             });
+        }
+    }
+    fn ensure_dictionary_element_is_present(&mut self) {
+        if !self.objects().any(|o| match o.specific {
+            ObjectType::Dictionary(_) => true,
+            _ => false,
+        }) {
+            self.add_object(Object::new(ObjectType::Dictionary(Dictionary {
+                ..Default::default()
+            })));
         }
     }
     fn ensure_mline_style_is_present_for_entity(&mut self, entity: &Entity) {
@@ -1170,8 +1183,29 @@ impl Drawing {
     }
     fn normalize_block_records(&mut self) {
         // ensure all block records that should exist do
-        self.ensure_block_record_is_present("*MODEL_SPACE");
-        self.ensure_block_record_is_present("*PAPER_SPACE");
+        let model_space_name = "*MODEL_SPACE";
+        let paper_space_name = "*PAPER_SPACE";
+
+        // Add blocks and store their handles
+        let model_block_handle = {
+            let model_block = self.add_block(Block {
+                name: model_space_name.to_string(),
+                ..Default::default()
+            });
+            model_block.handle
+        };
+
+        let paper_block_handle = {
+            let paper_block = self.add_block(Block {
+                name: paper_space_name.to_string(),
+                ..Default::default()
+            });
+            paper_block.handle
+        };
+
+        // Ensure block records are present
+        self.ensure_block_record_is_present("*MODEL_SPACE", model_block_handle);
+        self.ensure_block_record_is_present("*PAPER_SPACE", paper_block_handle);
     }
     fn normalize_layers(&mut self) {
         self.ensure_layer_is_present(&self.header.current_layer.clone());

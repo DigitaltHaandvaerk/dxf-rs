@@ -17,6 +17,8 @@ use crate::x_data;
 pub struct Block {
     /// The block's handle.
     pub handle: Handle,
+    // The ENDBLK handle - for newer versions of DXF https://ezdxf.readthedocs.io/en/stable/dxfinternals/block_management.html.
+    pub end_blk_handle: Handle,
     #[doc(hidden)]
     pub __owner_handle: Handle,
     /// The name of the layer containing the block.
@@ -101,6 +103,7 @@ impl Default for Block {
     fn default() -> Self {
         Block {
             handle: Handle::empty(),
+            end_blk_handle: Handle::empty(),
             __owner_handle: Handle::empty(),
             layer: String::from("0"),
             name: String::new(),
@@ -253,7 +256,7 @@ impl Block {
 
         pairs.push(CodePair::new_str(0, "ENDBLK"));
         if write_handles && !self.handle.is_empty() {
-            pairs.push(CodePair::new_string(5, &self.handle.as_string()));
+            pairs.push(CodePair::new_string(5, &self.end_blk_handle.as_string()));
         }
 
         if version >= AcadVersion::R14 {
@@ -694,14 +697,14 @@ mod tests {
         let reparsed = drawing_from_pairs(drawing_pairs);
 
         let blocks = reparsed.blocks().collect::<Vec<_>>();
-        assert_eq!(2, blocks.len());
-        assert_eq!(1, blocks[0].entities.len());
-        match blocks[0].entities[0].specific {
+        assert_eq!(4, blocks.len());
+        assert_eq!(1, blocks[2].entities.len());
+        match blocks[2].entities[0].specific {
             EntityType::Line(_) => (),
             _ => panic!("expected a line"),
         }
-        assert_eq!(1, blocks[1].entities.len());
-        match blocks[1].entities[0].specific {
+        assert_eq!(1, blocks[3].entities.len());
+        match blocks[3].entities[0].specific {
             EntityType::Circle(_) => (),
             _ => panic!("expected a circle"),
         }

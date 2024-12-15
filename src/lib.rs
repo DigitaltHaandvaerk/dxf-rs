@@ -175,6 +175,8 @@ pub mod entities {
 }
 pub mod tables {
     pub use crate::generated::tables::*;
+
+    pub use crate::table::*;
 }
 pub mod objects {
     pub use crate::generated::objects::*;

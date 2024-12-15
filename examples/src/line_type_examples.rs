@@ -20,8 +20,19 @@ fn apply_line_types_to_entities() -> dxf::DxfResult<()> {
     // line pattern contains 2 elements; positive values draw a line, negative values draw a gap
     // the following draws 3/4 of a line with a 1/4 gap
     line_type.element_count = 2;
-    line_type.dash_dot_space_lengths.push(0.75);
-    line_type.dash_dot_space_lengths.push(-0.25);
+
+    let line_type_element = dxf::tables::LineTypeElement {
+        dash_dot_space_length: 0.75,
+        ..Default::default()
+    };
+
+    let line_type_element_2 = dxf::tables::LineTypeElement {
+        dash_dot_space_length: -0.25,
+        ..Default::default()
+    };
+
+    line_type.line_elements.push(line_type_element);
+    line_type.line_elements.push(line_type_element_2);
     drawing.add_line_type(line_type);
 
     //

@@ -53,6 +53,7 @@ where
 {
     // dates are represented as the fractional number of days elapsed since December 31, 1899.
     let epoch = epoch(timezone);
+
     let duration = if date == 0.0 {
         ChronoDuration::seconds(0)
     } else {
@@ -119,6 +120,34 @@ fn as_double_conversion_test() {
         2_451_544.915_682_870_4,
         as_double_local(Local.with_ymd_and_hms(1999, 12, 31, 21, 58, 35).unwrap())
     );
+}
+
+#[test]
+fn test_spatial_index_default_timestamp() {
+    // Test that default value doesn't overflow
+    let now = Local::now();
+    let days_since_epoch = as_double_local(now); // Convert current time to DXF format
+    let converted_back = as_datetime_local(days_since_epoch); // Convert back to DateTime
+
+    // Compare original and converted timestamps
+    assert!(now - converted_back < chrono::Duration::seconds(1));
+}
+
+#[test]
+fn test_spatial_index_timestamp_overflow() {
+    // Test value that caused overflow in stacktrace
+    let problematic_days = 645125.0; // This will create ~55.7 trillion seconds when converted
+    assert!(matches!(
+        std::panic::catch_unwind(|| as_datetime_local(problematic_days)),
+        Err(_)
+    ));
+
+    // Test with checked_add to handle overflow gracefully
+    let fixed_result = Local
+        .with_ymd_and_hms(1900, 1, 1, 0, 0, 0)
+        .unwrap()
+        .checked_add_signed(chrono::Duration::seconds(55738996169161));
+    assert!(fixed_result.is_none());
 }
 
 pub(crate) fn duration_as_double(duration: StdDuration) -> f64 {

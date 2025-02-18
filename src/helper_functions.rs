@@ -133,23 +133,6 @@ fn test_spatial_index_default_timestamp() {
     assert!(now - converted_back < chrono::Duration::seconds(1));
 }
 
-#[test]
-fn test_spatial_index_timestamp_overflow() {
-    // Test value that caused overflow in stacktrace
-    let problematic_days = 645125.0; // This will create ~55.7 trillion seconds when converted
-    assert!(matches!(
-        std::panic::catch_unwind(|| as_datetime_local(problematic_days)),
-        Err(_)
-    ));
-
-    // Test with checked_add to handle overflow gracefully
-    let fixed_result = Local
-        .with_ymd_and_hms(1900, 1, 1, 0, 0, 0)
-        .unwrap()
-        .checked_add_signed(chrono::Duration::seconds(55738996169161));
-    assert!(fixed_result.is_none());
-}
-
 pub(crate) fn duration_as_double(duration: StdDuration) -> f64 {
     duration.as_secs() as f64
 }

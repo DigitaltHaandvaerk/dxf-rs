@@ -2237,9 +2237,9 @@ mod tests {
                     assert_eq!(a.__id_buffers_handle, b.__id_buffers_handle);
                     assert_eq!(a.id_buffer_counts, b.id_buffer_counts);
                 }
-                (&ObjectType::SpatialIndex(_), &ObjectType::SpatialIndex(_)) => {
-                    // SpatialIndex has a timestamp that will obviously differ; there are no other fields
-                }
+                // (&ObjectType::SpatialIndex(_), &ObjectType::SpatialIndex(_)) => {
+                // SpatialIndex has a timestamp that will obviously differ; there are no other fields
+                // }
                 _ => assert_eq!(expected_type, obj.specific),
             }
 

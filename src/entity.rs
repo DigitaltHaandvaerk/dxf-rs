@@ -1162,132 +1162,228 @@ impl Entity {
     ) -> DxfResult<bool> {
         let mut reading_column_data = false;
         let mut read_column_count = false;
+        let mut reading_embedded_object = false;
         loop {
             let pair = next_pair!(iter);
-            match pair.code {
-                10 => {
-                    mtext.insertion_point.x = pair.assert_f64()?;
-                }
-                20 => {
-                    mtext.insertion_point.y = pair.assert_f64()?;
-                }
-                30 => {
-                    mtext.insertion_point.z = pair.assert_f64()?;
-                }
-                40 => {
-                    mtext.initial_text_height = pair.assert_f64()?;
-                }
-                41 => {
-                    mtext.reference_rectangle_width = pair.assert_f64()?;
-                }
-                71 => {
-                    mtext.attachment_point =
-                        enum_from_number!(AttachmentPoint, TopLeft, from_i16, pair.assert_i16()?);
-                }
-                72 => {
-                    mtext.drawing_direction = enum_from_number!(
-                        DrawingDirection,
-                        LeftToRight,
-                        from_i16,
-                        pair.assert_i16()?
-                    );
-                }
-                3 => {
-                    mtext.extended_text.push(pair.assert_string()?);
-                }
-                1 => {
-                    mtext.text = pair.assert_string()?;
-                }
-                7 => {
-                    mtext.text_style_name = pair.assert_string()?;
-                }
-                210 => {
-                    mtext.extrusion_direction.x = pair.assert_f64()?;
-                }
-                220 => {
-                    mtext.extrusion_direction.y = pair.assert_f64()?;
-                }
-                230 => {
-                    mtext.extrusion_direction.z = pair.assert_f64()?;
-                }
-                11 => {
-                    mtext.x_axis_direction.x = pair.assert_f64()?;
-                }
-                21 => {
-                    mtext.x_axis_direction.y = pair.assert_f64()?;
-                }
-                31 => {
-                    mtext.x_axis_direction.z = pair.assert_f64()?;
-                }
-                42 => {
-                    mtext.horizontal_width = pair.assert_f64()?;
-                }
-                43 => {
-                    mtext.vertical_height = pair.assert_f64()?;
-                }
-                50 => {
-                    if reading_column_data {
-                        if read_column_count {
-                            mtext.column_heights.push(pair.assert_f64()?);
-                        } else {
-                            mtext.column_count = pair.assert_f64()? as i32;
-                            read_column_count = true;
+            // The embedded object logic has been deducted from https://github.com/mozman/ezdxf/blob/master/src/ezdxf/entities/mtext.py. It does not seem documented great in DXF spec.
+            if pair.code == 101 {
+                reading_embedded_object = true;
+                continue;
+            }
+
+            if reading_embedded_object {
+                match pair.code {
+                    10 => {
+                        if mtext.x_axis_direction.x == 0.0 {
+                            mtext.x_axis_direction.x = pair.assert_f64()?;
                         }
-                    } else {
-                        mtext.rotation_angle = pair.assert_f64()?;
+                    }
+                    20 => {
+                        if mtext.x_axis_direction.y == 0.0 {
+                            mtext.x_axis_direction.y = pair.assert_f64()?;
+                        }
+                    }
+                    30 => {
+                        if mtext.x_axis_direction.z == 0.0 {
+                            mtext.x_axis_direction.z = pair.assert_f64()?;
+                        }
+                    }
+                    11 => {
+                        if mtext.insertion_point.x == 0.0 {
+                            mtext.insertion_point.x = pair.assert_f64()?;
+                        }
+                    }
+                    21 => {
+                        if mtext.insertion_point.y == 0.0 {
+                            mtext.insertion_point.y = pair.assert_f64()?;
+                        }
+                    }
+                    31 => {
+                        if mtext.insertion_point.z == 0.0 {
+                            mtext.insertion_point.z = pair.assert_f64()?;
+                        }
+                    }
+                    40 => {
+                        if mtext.reference_rectangle_width == 0.0 {
+                            mtext.reference_rectangle_width = pair.assert_f64()?;
+                        }
+                    }
+                    41 => {
+                        if mtext.initial_text_height == 0.0 {
+                            mtext.initial_text_height = pair.assert_f64()?;
+                        }
+                    }
+                    42 => {
+                        mtext.horizontal_width = pair.assert_f64()?;
+                    }
+                    43 => {
+                        mtext.vertical_height = pair.assert_f64()?;
+                    }
+                    44 => {
+                        mtext.reference_rectangle_width = pair.assert_f64()?;
+                    }
+                    45 => {
+                        mtext.column_gutter = pair.assert_f64()?;
+                    }
+                    46 => {
+                        // Not implemented
+                    }
+                    71 => {
+                        mtext.column_type = pair.assert_i16()?;
+                    }
+                    72 => {
+                        mtext.column_count = pair.assert_i16()? as i32;
+                    }
+                    73 => {
+                        mtext.is_column_auto_height = as_bool(pair.assert_i16()?);
+                    }
+                    74 => {
+                        mtext.is_column_flow_reversed = as_bool(pair.assert_i16()?);
+                    }
+                    _ => {
+                        common.apply_individual_pair(&pair, iter)?;
                     }
                 }
-                73 => {
-                    mtext.line_spacing_style = enum_from_number!(
-                        MTextLineSpacingStyle,
-                        AtLeast,
-                        from_i16,
-                        pair.assert_i16()?
-                    );
-                }
-                44 => {
-                    mtext.line_spacing_factor = pair.assert_f64()?;
-                }
-                90 => {
-                    mtext.background_fill_setting =
-                        enum_from_number!(BackgroundFillSetting, Off, from_i32, pair.assert_i32()?);
-                }
-                420 => {
-                    mtext.background_color_rgb = pair.assert_i32()?;
-                }
-                430 => {
-                    mtext.background_color_name = pair.assert_string()?;
-                }
-                45 => {
-                    mtext.fill_box_scale = pair.assert_f64()?;
-                }
-                63 => {
-                    mtext.background_fill_color = Color::from_raw_value(pair.assert_i16()?);
-                }
-                441 => {
-                    mtext.background_fill_color_transparency = pair.assert_i32()?;
-                }
-                75 => {
-                    mtext.column_type = pair.assert_i16()?;
-                    reading_column_data = true;
-                }
-                76 => {
-                    mtext.column_count = i32::from(pair.assert_i16()?);
-                }
-                78 => {
-                    mtext.is_column_flow_reversed = as_bool(pair.assert_i16()?);
-                }
-                79 => {
-                    mtext.is_column_auto_height = as_bool(pair.assert_i16()?);
-                }
-                48 => {
-                    mtext.column_width = pair.assert_f64()?;
-                }
-                49 => {
-                    mtext.column_gutter = pair.assert_f64()?;
-                }
-                _ => {
-                    common.apply_individual_pair(&pair, iter)?;
+            } else {
+                match pair.code {
+                    10 => {
+                        mtext.insertion_point.x = pair.assert_f64()?;
+                    }
+                    20 => {
+                        mtext.insertion_point.y = pair.assert_f64()?;
+                    }
+                    30 => {
+                        mtext.insertion_point.z = pair.assert_f64()?;
+                    }
+                    40 => {
+                        mtext.initial_text_height = pair.assert_f64()?;
+                    }
+                    41 => {
+                        mtext.reference_rectangle_width = pair.assert_f64()?;
+                    }
+                    71 => {
+                        if !reading_column_data {
+                            mtext.attachment_point = enum_from_number!(
+                                AttachmentPoint,
+                                TopLeft,
+                                from_i16,
+                                pair.assert_i16()?
+                            );
+                        }
+                    }
+                    72 => {
+                        if !reading_column_data {
+                            mtext.drawing_direction = enum_from_number!(
+                                DrawingDirection,
+                                LeftToRight,
+                                from_i16,
+                                pair.assert_i16()?
+                            );
+                        }
+                    }
+                    3 => {
+                        mtext.extended_text.push(pair.assert_string()?);
+                    }
+                    1 => {
+                        mtext.text = pair.assert_string()?;
+                    }
+                    7 => {
+                        mtext.text_style_name = pair.assert_string()?;
+                    }
+                    210 => {
+                        mtext.extrusion_direction.x = pair.assert_f64()?;
+                    }
+                    220 => {
+                        mtext.extrusion_direction.y = pair.assert_f64()?;
+                    }
+                    230 => {
+                        mtext.extrusion_direction.z = pair.assert_f64()?;
+                    }
+                    11 => {
+                        mtext.x_axis_direction.x = pair.assert_f64()?;
+                    }
+                    21 => {
+                        mtext.x_axis_direction.y = pair.assert_f64()?;
+                    }
+                    31 => {
+                        mtext.x_axis_direction.z = pair.assert_f64()?;
+                    }
+                    42 => {
+                        mtext.horizontal_width = pair.assert_f64()?;
+                    }
+                    43 => {
+                        mtext.vertical_height = pair.assert_f64()?;
+                    }
+                    50 => {
+                        if reading_column_data {
+                            if read_column_count {
+                                mtext.column_heights.push(pair.assert_f64()?);
+                            } else {
+                                mtext.column_count = pair.assert_f64()? as i32;
+                                read_column_count = true;
+                            }
+                        } else {
+                            mtext.rotation_angle = pair.assert_f64()?;
+                        }
+                    }
+                    73 => {
+                        mtext.line_spacing_style = enum_from_number!(
+                            MTextLineSpacingStyle,
+                            AtLeast,
+                            from_i16,
+                            pair.assert_i16()?
+                        );
+                    }
+                    44 => {
+                        if !reading_column_data {
+                            mtext.line_spacing_factor = pair.assert_f64()?;
+                        }
+                    }
+                    90 => {
+                        mtext.background_fill_setting = enum_from_number!(
+                            BackgroundFillSetting,
+                            Off,
+                            from_i32,
+                            pair.assert_i32()?
+                        );
+                    }
+                    420 => {
+                        mtext.background_color_rgb = pair.assert_i32()?;
+                    }
+                    430 => {
+                        mtext.background_color_name = pair.assert_string()?;
+                    }
+                    45 => {
+                        mtext.fill_box_scale = pair.assert_f64()?;
+                    }
+                    63 => {
+                        mtext.background_fill_color = Color::from_raw_value(pair.assert_i16()?);
+                    }
+                    441 => {
+                        mtext.background_fill_color_transparency = pair.assert_i32()?;
+                    }
+                    75 => {
+                        mtext.column_type = pair.assert_i16()?;
+                        reading_column_data = true;
+                    }
+                    76 => {
+                        mtext.column_count = i32::from(pair.assert_i16()?);
+                    }
+                    78 => {
+                        mtext.is_column_flow_reversed = as_bool(pair.assert_i16()?);
+                    }
+                    79 => {
+                        mtext.is_column_auto_height = as_bool(pair.assert_i16()?);
+                    }
+                    48 => {
+                        mtext.column_width = pair.assert_f64()?;
+                    }
+                    49 => {
+                        mtext.column_gutter = pair.assert_f64()?;
+                    }
+                    _ => {
+                        common.apply_individual_pair(&pair, iter)?;
+                    }
                 }
             }
         }
@@ -2022,6 +2118,85 @@ mod tests {
         match entities[1].specific {
             EntityType::Line(_) => {}
             _ => panic!("expected a line"),
+        }
+    }
+
+    #[test]
+    fn read_entity_mtext_with_embedded_object() {
+        // Arrange
+        let entity = read_entity(
+            "MTEXT",
+            vec![
+                // CodePair::new_i16(5, 764),
+                CodePair::new_str(102, "{ACAD_XDICTIONARY"),
+                CodePair::new_i32(360, 765),
+                CodePair::new_str(102, "}"),
+                // CodePair::new_i16(330, 31),
+                CodePair::new_str(100, "AcDbEntity"),
+                CodePair::new_str(8, "Proj_ledninger$0$TF_K_---_Tekst-"),
+                CodePair::new_str(100, "AcDbMText"),
+                CodePair::new_f64(10, 676538913.4250469),
+                CodePair::new_f64(20, 6147397473.123696),
+                CodePair::new_f64(30, -152.5233843860332),
+                CodePair::new_f64(40, 400.0),
+                CodePair::new_f64(41, 6126.179808862732),
+                CodePair::new_f64(46, 0.0),
+                CodePair::new_i16(71, 1),
+                CodePair::new_i16(72, 5),
+                CodePair::new_str(1, "SHARH80\\PØ1250 Br.\\PDK: 48.25\\PBK: 45.22"),
+                CodePair::new_str(7, "Proj_ledninger$0$Arial"),
+                CodePair::new_f64(11, 0.2644180576221719),
+                CodePair::new_f64(21, 0.9644081557117392),
+                CodePair::new_f64(31, 0.0),
+                CodePair::new_i16(73, 1),
+                CodePair::new_f64(44, 1.0),
+                // Embedded random object data
+                CodePair::new_str(101, "Embedded Object"),
+                CodePair::new_i16(70, 1),
+                CodePair::new_f64(10, 0.2644180576221719),
+                CodePair::new_f64(20, 0.9644081557117392),
+                CodePair::new_f64(30, 0.0),
+                CodePair::new_f64(11, 676538913.4250469),
+                CodePair::new_f64(21, 6147397473.123696),
+                CodePair::new_f64(31, -152.5233843860332),
+                CodePair::new_f64(40, 400.0),
+                CodePair::new_f64(41, 0.0),
+                CodePair::new_f64(42, 2525.784447476126),
+                CodePair::new_f64(43, 2431.650750341065),
+                CodePair::new_i16(71, 2),
+                CodePair::new_i16(72, 1),
+                CodePair::new_f64(44, 6126.179808862732),
+                CodePair::new_f64(45, 5000.0),
+                CodePair::new_i16(73, 0),
+                CodePair::new_i16(74, 0),
+                CodePair::new_f64(46, 0.0),
+                CodePair::new_str(1001, "AcadAnnotative"),
+                CodePair::new_str(1000, "AnnotativeData"),
+                CodePair::new_str(1002, "{"),
+                CodePair::new_i16(1070, 1),
+                CodePair::new_i16(1070, 1),
+                CodePair::new_str(1002, "}"),
+            ],
+        );
+
+        // Assert
+        match entity.specific {
+            EntityType::MText(ref mtext) => {
+                assert_eq!(
+                    Point::new(676538913.4250469, 6147397473.123696, -152.5233843860332),
+                    mtext.insertion_point
+                );
+                assert_eq!(400.0, mtext.initial_text_height);
+                assert_eq!(6126.179808862732, mtext.reference_rectangle_width);
+                assert_eq!(0.0, mtext.rotation_angle);
+                assert_eq!("SHARH80\\PØ1250 Br.\\PDK: 48.25\\PBK: 45.22", mtext.text);
+                assert_eq!("Proj_ledninger$0$Arial", mtext.text_style_name);
+                assert_eq!(0.2644180576221719, mtext.x_axis_direction.x);
+                assert_eq!(0.9644081557117392, mtext.x_axis_direction.y);
+                assert_eq!(0.0, mtext.x_axis_direction.z);
+                assert_eq!(1.0, mtext.line_spacing_factor);
+            }
+            _ => panic!("expected an MTEXT"),
         }
     }
 

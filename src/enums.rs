@@ -1413,3 +1413,14 @@ pub enum UnitZeroSuppression {
     IncludeZeroInchesAndSuppressZeroFeet = 3,
 }
 }
+
+enum_from_primitive! {
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+pub enum MLeaderContentType {
+    None = 0,
+    BlockContent = 1,
+    MTextContent = 2,
+    TolreanceContent = 3,
+}
+}

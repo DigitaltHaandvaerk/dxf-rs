@@ -129,6 +129,38 @@ pub struct LwPolylineVertex {
 }
 
 //------------------------------------------------------------------------------
+//                                                                       MLeader
+//------------------------------------------------------------------------------
+
+impl MLeader {
+    pub fn get_vertices(&self) -> Vec<Point> {
+        if self.has_dogleg {
+            // Insert before the first coordinate the dogleg coordinate
+            let dogleg_vertice = self.calculate_dogleg_vertice();
+            return vec![dogleg_vertice]
+                .into_iter()
+                .chain(self.vertices.clone().into_iter()) // <-- Use self.vertices directly, not self.vertices()
+                .collect();
+        }
+        self.vertices.clone()
+    }
+
+    fn calculate_dogleg_vertice(&self) -> Point {
+        // Calculate from the first coordinate of the vertices
+        let first_vertex = self
+            .vertices
+            .first()
+            .expect("MLeader must have at least one vertex");
+        // Calculate the new vertex with cos and sin of the 3D coordinate
+        Point {
+            x: first_vertex.x + self.dogleg_vector.x * self.dogleg_length,
+            y: first_vertex.y + self.dogleg_vector.y * self.dogleg_length,
+            z: first_vertex.z + self.dogleg_vector.z * self.dogleg_length,
+        }
+    }
+}
+
+//------------------------------------------------------------------------------
 //                                                                    ModelPoint
 //------------------------------------------------------------------------------
 impl ModelPoint {
@@ -799,6 +831,9 @@ impl Entity {
             EntityType::MText(ref mut mtext) => {
                 Entity::apply_custom_reader_mtext(&mut self.common, mtext, iter)
             }
+            EntityType::MLeader(ref mut mleader) => {
+                Entity::apply_custom_reader_mleader(&mut self.common, mleader, iter)
+            }
             _ => Ok(false), // no custom reader
         }
     }
@@ -1383,6 +1418,148 @@ impl Entity {
                     }
                     _ => {
                         common.apply_individual_pair(&pair, iter)?;
+                    }
+                }
+            }
+        }
+    }
+    fn apply_custom_reader_mleader(
+        common: &mut EntityCommon,
+        mleader: &mut MLeader,
+        iter: &mut CodePairPutBack,
+    ) -> DxfResult<bool> {
+        #[derive(PartialEq)]
+        enum ReadingState {
+            TopLevel,
+            ContextData,
+            Leader,
+            LeaderLine,
+        }
+
+        let mut reading_state = ReadingState::TopLevel;
+
+        const CONTEXT_DATA_START: i32 = 300;
+        const CONTEXT_DATA_END: i32 = 301;
+        const LEADER_START: i32 = 302;
+        const LEADER_END: i32 = 303;
+        const LEADER_LINE_START: i32 = 304;
+        const LEADER_LINE_END: i32 = 305;
+
+        loop {
+            let pair = next_pair!(iter);
+
+            // Check for state changes first
+            // The state changes are based on embedded states where context_data includes leader and leader includes leader_line data.
+            match pair.code {
+                CONTEXT_DATA_START => {
+                    reading_state = ReadingState::ContextData;
+                    continue;
+                }
+                CONTEXT_DATA_END if reading_state == ReadingState::ContextData => {
+                    reading_state = ReadingState::TopLevel;
+                    continue;
+                }
+                LEADER_START => {
+                    reading_state = ReadingState::Leader;
+                    continue;
+                }
+                LEADER_END if reading_state == ReadingState::Leader => {
+                    reading_state = ReadingState::ContextData;
+                    continue;
+                }
+                LEADER_LINE_START => {
+                    reading_state = ReadingState::LeaderLine;
+                    continue;
+                }
+                LEADER_LINE_END if reading_state == ReadingState::LeaderLine => {
+                    reading_state = ReadingState::Leader;
+                    continue;
+                }
+                _ => {}
+            }
+
+            // Process data based on current state
+            match reading_state {
+                ReadingState::TopLevel => match pair.code {
+                    290 => {
+                        mleader.has_landing = as_bool(pair.assert_i16()?);
+                    }
+                    291 => {
+                        mleader.has_dogleg = as_bool(pair.assert_i16()?);
+                    }
+                    _ => {
+                        common.apply_individual_pair(&pair, iter)?;
+                    }
+                },
+                ReadingState::ContextData => {
+                    common.apply_individual_pair(&pair, iter)?;
+                }
+                ReadingState::Leader => {
+                    match pair.code {
+                        10 => {
+                            // Loop through the next two to get code 20 and 30 break and error out if those are not found
+                            let x_coord = pair.assert_f64()?;
+                            // Next iter
+                            let pair = next_pair!(iter);
+                            if pair.code != 20 {
+                                return Err(DxfError::UnexpectedCodePair(pair, String::new()));
+                            }
+                            let y_coord = pair.assert_f64()?;
+                            // Next iter
+                            let pair = next_pair!(iter);
+                            if pair.code != 30 {
+                                return Err(DxfError::UnexpectedCodePair(pair, String::new()));
+                            }
+                            let z_coord = pair.assert_f64()?;
+                            mleader.vertices.push(Point {
+                                x: x_coord,
+                                y: y_coord,
+                                z: z_coord,
+                            });
+                        }
+                        40 => {
+                            mleader.dogleg_length = pair.assert_f64()?;
+                        }
+                        11 => {
+                            mleader.dogleg_vector.x = pair.assert_f64()?;
+                        }
+                        21 => {
+                            mleader.dogleg_vector.y = pair.assert_f64()?;
+                        }
+                        31 => {
+                            mleader.dogleg_vector.z = pair.assert_f64()?;
+                        }
+                        _ => {
+                            common.apply_individual_pair(&pair, iter)?;
+                        }
+                    }
+                }
+                ReadingState::LeaderLine => {
+                    match pair.code {
+                        10 => {
+                            // Loop through the next two to get code 20 and 30 break and error out if those are not found
+                            let x_coord = pair.assert_f64()?;
+                            // Next iter
+                            let pair = next_pair!(iter);
+                            if pair.code != 20 {
+                                return Err(DxfError::UnexpectedCodePair(pair, String::new()));
+                            }
+                            let y_coord = pair.assert_f64()?;
+                            // Next iter
+                            let pair = next_pair!(iter);
+                            if pair.code != 30 {
+                                return Err(DxfError::UnexpectedCodePair(pair, String::new()));
+                            }
+                            let z_coord = pair.assert_f64()?;
+                            mleader.vertices.push(Point {
+                                x: x_coord,
+                                y: y_coord,
+                                z: z_coord,
+                            });
+                        }
+                        _ => {
+                            common.apply_individual_pair(&pair, iter)?;
+                        }
                     }
                 }
             }
@@ -2198,6 +2375,172 @@ mod tests {
             }
             _ => panic!("expected an MTEXT"),
         }
+    }
+
+    #[test]
+    fn read_multi_leader() {
+        // Arrange
+        let entity = read_entity(
+            "MULTILEADER",
+            vec![
+                CodePair::new_str(102, "{ACAD_XDICTIONARY"),
+                CodePair::new_i32(360, 301),
+                CodePair::new_str(102, "}"),
+                CodePair::new_str(100, "AcDbEntity"),
+                CodePair::new_str(8, "Proj_ledninger$0$TF_K_---_Leader-"),
+                CodePair::new_i16(160, 452),
+                CodePair::new_str(100, "AcDbMLeader"),
+                CodePair::new_i16(270, 2),
+                CodePair::new_str(300, "CONTEXT_DATA{"), // start of CONTEXT_DATA
+                CodePair::new_f64(40, 200.0),
+                CodePair::new_f64(10, 676536270.82997),
+                CodePair::new_f64(20, 6147398029.870995),
+                CodePair::new_f64(30, 41.18369923159479),
+                CodePair::new_f64(41, 500.0),
+                CodePair::new_f64(140, 500.0),
+                CodePair::new_f64(145, 400.0),
+                CodePair::new_i16(174, 1),
+                CodePair::new_i16(175, 1),
+                CodePair::new_i16(176, 0),
+                CodePair::new_i16(177, 0),
+                CodePair::new_i16(290, 1),
+                CodePair::new_str(304, ""),
+                CodePair::new_f64(11, 0.0),
+                CodePair::new_f64(21, 0.0),
+                CodePair::new_f64(31, 1.0),
+                CodePair::new_i16(340, 715), // 2CB in hex is 715
+                CodePair::new_f64(12, 676536406.164786),
+                CodePair::new_f64(22, 6147397578.003218),
+                CodePair::new_f64(32, 41.18369923159479),
+                CodePair::new_f64(13, -0.2644180576221713),
+                CodePair::new_f64(23, -0.9644081557117392),
+                CodePair::new_f64(33, 0.0),
+                CodePair::new_f64(42, 4.444788527204954),
+                CodePair::new_f64(43, 0.0),
+                CodePair::new_f64(44, 0.0),
+                CodePair::new_f64(45, 1.0),
+                CodePair::new_i16(170, 1),
+                CodePair::new_i32(90, -1028521984),
+                CodePair::new_i16(171, 1),
+                CodePair::new_i16(172, 5),
+                CodePair::new_i32(91, -1073741824),
+                CodePair::new_f64(141, 0.0),
+                CodePair::new_i32(92, 0),
+                CodePair::new_i16(291, 0),
+                CodePair::new_i16(292, 0),
+                CodePair::new_i16(173, 0),
+                CodePair::new_i16(293, 0),
+                CodePair::new_f64(142, 0.0),
+                CodePair::new_f64(143, 0.0),
+                CodePair::new_i16(294, 0),
+                CodePair::new_i16(295, 0),
+                CodePair::new_i16(296, 0),
+                CodePair::new_f64(110, 676538419.6360937),
+                CodePair::new_f64(120, 6147411946.366201),
+                CodePair::new_f64(130, 41.18369923159479),
+                CodePair::new_f64(111, -0.2644180576221713),
+                CodePair::new_f64(121, -0.9644081557117392),
+                CodePair::new_f64(131, 0.0),
+                CodePair::new_f64(112, 0.9644081557117392),
+                CodePair::new_f64(122, -0.2644180576221713),
+                CodePair::new_f64(132, 0.0),
+                CodePair::new_i16(297, 0),
+                CodePair::new_str(302, "LEADER{"), // start of LEADER
+                CodePair::new_i16(290, 1),
+                CodePair::new_i16(291, 1),
+                CodePair::new_f64(10, 676537064.180925),
+                CodePair::new_f64(20, 6147400923.448454),
+                CodePair::new_f64(30, 41.18369923159479),
+                CodePair::new_f64(11, -0.2644180576221713), // Dogleg direction vector x
+                CodePair::new_f64(21, -0.9644081557117392), // Dogleg direction vector y
+                CodePair::new_f64(31, 0.0),                 // Dogleg direction vector z
+                CodePair::new_i32(90, 0),
+                CodePair::new_f64(40, 3000.366019534463), // dogleg length
+                CodePair::new_str(304, "LEADER_LINE{"),   // start of LEADER_LINE
+                CodePair::new_f64(10, 676548478.6502683),
+                CodePair::new_f64(20, 6147400741.812067),
+                CodePair::new_f64(30, 41.18369923159479),
+                CodePair::new_i32(91, 0),
+                CodePair::new_str(305, "}"), // end of LEADER_LINE
+                CodePair::new_i16(271, 0),
+                CodePair::new_str(303, "}"), // end of LEADER
+                CodePair::new_i16(272, 9),
+                CodePair::new_i16(273, 9),
+                CodePair::new_str(301, "}"), // end of CONTEXT_DATA
+                CodePair::new_i16(340, 725), // 2D5 in hex is 725
+                CodePair::new_i32(90, 279744),
+                CodePair::new_i16(170, 1),
+                CodePair::new_i32(91, -1073741824),
+                CodePair::new_i16(341, 20), // 14 in hex is 20
+                CodePair::new_i16(171, -2),
+                CodePair::new_i16(290, 1),
+                CodePair::new_i16(291, 1),
+                CodePair::new_f64(41, 15.0018300976723),
+                CodePair::new_f64(42, 2.5),
+                CodePair::new_i16(172, 2),
+                CodePair::new_i16(343, 715), // 2CB in hex is 715
+                CodePair::new_i16(173, 1),
+                CodePair::new_i32(95, 1),
+                CodePair::new_i16(174, 1),
+                CodePair::new_i16(175, 0),
+                CodePair::new_i32(92, -1023410175),
+                CodePair::new_i16(292, 0),
+                CodePair::new_i32(93, -1056964608),
+                CodePair::new_f64(10, 1.0),
+                CodePair::new_f64(20, 1.0),
+                CodePair::new_f64(30, 1.0),
+                CodePair::new_f64(43, 0.0),
+                CodePair::new_i16(176, 0),
+                CodePair::new_i16(293, 1),
+                CodePair::new_i16(294, 0),
+                CodePair::new_i16(178, 0),
+                CodePair::new_i16(179, 1),
+                CodePair::new_f64(45, 1.0),
+                CodePair::new_i16(271, 0),
+                CodePair::new_i16(272, 9),
+                CodePair::new_i16(273, 9),
+                CodePair::new_i16(295, 1),
+            ],
+        );
+
+        // Assert
+        match entity.specific {
+            EntityType::MLeader(ref mleader) => {
+                assert_eq!(mleader.has_dogleg, true);
+                assert_eq!(mleader.has_landing, true);
+                assert_eq!(mleader.dogleg_length, 3000.366019534463);
+                assert_eq!(
+                    mleader.dogleg_vector,
+                    Vector::new(-0.2644180576221713, -0.9644081557117392, 0.0)
+                );
+                assert_eq!(mleader.vertices.len(), 2);
+
+                // Dogleg included vertices
+                assert_eq!(
+                    mleader.get_vertices(),
+                    vec![
+                        Point {
+                            x: 676536270.82997,
+                            y: 6147398029.870995,
+                            z: 41.18369923159479,
+                        },
+                        Point {
+                            x: 676537064.180925,
+                            y: 6147400923.448454,
+                            z: 41.18369923159479,
+                        },
+                        Point {
+                            x: 676548478.6502683,
+                            y: 6147400741.812067,
+                            z: 41.18369923159479,
+                        }
+                    ]
+                );
+            }
+            _ => panic!("expected a MLeader"),
+        }
+
+        assert_eq!(entity.common.layer, "Proj_ledninger$0$TF_K_---_Leader-");
     }
 
     #[test]

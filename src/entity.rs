@@ -134,9 +134,17 @@ pub struct LwPolylineVertex {
 
 impl MLeader {
     pub fn get_vertices(&self) -> Vec<Point> {
-        if self.has_dogleg {
+        if self.vertices.is_empty() {
+            // If there are no vertices, return an empty vector
+            return vec![];
+        }
+
+        if self.enable_dogleg {
             // Insert before the first coordinate the dogleg coordinate
-            let dogleg_vertice = self.calculate_dogleg_vertice();
+            let dogleg_vertice = match self.calculate_dogleg_vertice() {
+                Some(dogleg) => dogleg,
+                None => return vec![], // If no dogleg can be calculated, return empty
+            };
             return vec![dogleg_vertice]
                 .into_iter()
                 .chain(self.vertices.clone().into_iter()) // <-- Use self.vertices directly, not self.vertices()
@@ -145,18 +153,18 @@ impl MLeader {
         self.vertices.clone()
     }
 
-    fn calculate_dogleg_vertice(&self) -> Point {
+    fn calculate_dogleg_vertice(&self) -> Option<Point> {
         // Calculate from the first coordinate of the vertices
-        let first_vertex = self
-            .vertices
-            .first()
-            .expect("MLeader must have at least one vertex");
+        let first_vertex = match self.vertices.first() {
+            Some(first_vertex) => first_vertex,
+            None => return None, // No vertices available
+        };
         // Calculate the new vertex with cos and sin of the 3D coordinate
-        Point {
+        Some(Point {
             x: first_vertex.x + self.dogleg_vector.x * self.dogleg_length,
             y: first_vertex.y + self.dogleg_vector.y * self.dogleg_length,
             z: first_vertex.z + self.dogleg_vector.z * self.dogleg_length,
-        }
+        })
     }
 }
 
@@ -1459,7 +1467,7 @@ impl Entity {
                     reading_state = ReadingState::TopLevel;
                     continue;
                 }
-                LEADER_START => {
+                LEADER_START if reading_state == ReadingState::ContextData => {
                     reading_state = ReadingState::Leader;
                     continue;
                 }
@@ -1467,7 +1475,7 @@ impl Entity {
                     reading_state = ReadingState::ContextData;
                     continue;
                 }
-                LEADER_LINE_START => {
+                LEADER_LINE_START if reading_state == ReadingState::Leader => {
                     reading_state = ReadingState::LeaderLine;
                     continue;
                 }
@@ -1482,18 +1490,100 @@ impl Entity {
             match reading_state {
                 ReadingState::TopLevel => match pair.code {
                     290 => {
-                        mleader.has_landing = as_bool(pair.assert_i16()?);
+                        mleader.enable_landing = as_bool(pair.assert_i16()?);
                     }
                     291 => {
-                        mleader.has_dogleg = as_bool(pair.assert_i16()?);
+                        mleader.enable_dogleg = as_bool(pair.assert_i16()?);
+                    }
+                    172 => {
+                        mleader.content_type = enum_from_number!(
+                            MLeaderContentType,
+                            None,
+                            from_i16,
+                            pair.assert_i16()?
+                        )
                     }
                     _ => {
                         common.apply_individual_pair(&pair, iter)?;
                     }
                 },
-                ReadingState::ContextData => {
-                    common.apply_individual_pair(&pair, iter)?;
-                }
+                ReadingState::ContextData => match pair.code {
+                    304 => {
+                        mleader.default_text_contents = pair.assert_string()?;
+                    }
+                    10 => {
+                        // Loop through the next two to get code 20 and 30 break and error out if those are not found
+                        let x_coord = pair.assert_f64()?;
+                        // Next iter
+                        let pair = next_pair!(iter);
+                        if pair.code != 20 {
+                            return Err(DxfError::UnexpectedCodePair(pair, String::new()));
+                        }
+                        let y_coord = pair.assert_f64()?;
+                        // Next iter
+                        let pair = next_pair!(iter);
+                        if pair.code != 30 {
+                            return Err(DxfError::UnexpectedCodePair(pair, String::new()));
+                        }
+                        let z_coord = pair.assert_f64()?;
+                        mleader.content_base_point = Point {
+                            x: x_coord,
+                            y: y_coord,
+                            z: z_coord,
+                        };
+                    }
+                    11 => {
+                        // Text normal direction (11,21,31)
+                        let x_coord = pair.assert_f64()?;
+                        let pair = next_pair!(iter);
+                        if pair.code != 21 {
+                            return Err(DxfError::UnexpectedCodePair(pair, String::new()));
+                        }
+                        let y_coord = pair.assert_f64()?;
+                        let pair = next_pair!(iter);
+                        if pair.code != 31 {
+                            return Err(DxfError::UnexpectedCodePair(pair, String::new()));
+                        }
+                        let z_coord = pair.assert_f64()?;
+                        mleader.text_normal_direction = Vector {
+                            x: x_coord,
+                            y: y_coord,
+                            z: z_coord,
+                        };
+                    }
+                    12 => {
+                        // Text location (12,22,32)
+                        let x_coord = pair.assert_f64()?;
+                        let pair = next_pair!(iter);
+                        if pair.code != 22 {
+                            return Err(DxfError::UnexpectedCodePair(pair, String::new()));
+                        }
+                        let y_coord = pair.assert_f64()?;
+                        let pair = next_pair!(iter);
+                        if pair.code != 32 {
+                            return Err(DxfError::UnexpectedCodePair(pair, String::new()));
+                        }
+                        let z_coord = pair.assert_f64()?;
+                        mleader.text_location = Point {
+                            x: x_coord,
+                            y: y_coord,
+                            z: z_coord,
+                        };
+                    }
+                    41 => {
+                        mleader.text_height = pair.assert_f64()?;
+                    }
+                    42 => {
+                        mleader.text_rotation = pair.assert_f64()?;
+                    }
+                    43 => {
+                        mleader.text_width = pair.assert_f64()?;
+                    }
+                    171 => {
+                        mleader.text_attachment = pair.assert_i16()?;
+                    }
+                    _ => common.apply_individual_pair(&pair, iter)?,
+                },
                 ReadingState::Leader => {
                     match pair.code {
                         10 => {
@@ -1606,6 +1696,9 @@ impl Entity {
             }
             EntityType::Vertex(ref v) => {
                 Entity::add_custom_code_pairs_vertex(pairs, v, version);
+            }
+            EntityType::MLeader(ref leader) => {
+                Entity::add_custom_code_pairs_mleader(pairs, leader, version);
             }
             _ => return false, // no custom code pairs
         }
@@ -1805,6 +1898,15 @@ impl Entity {
         if version >= AcadVersion::R2010 {
             pairs.push(CodePair::new_i32(91, v.identifier));
         }
+        true
+    }
+    fn add_custom_code_pairs_mleader(
+        _pairs: &mut [CodePair],
+        _leader: &MLeader,
+        _version: AcadVersion,
+    ) -> bool {
+        // TODO: Implement custom writer for code pairs for mleader
+
         true
     }
     fn add_post_code_pairs(
@@ -2404,7 +2506,7 @@ mod tests {
                 CodePair::new_i16(176, 0),
                 CodePair::new_i16(177, 0),
                 CodePair::new_i16(290, 1),
-                CodePair::new_str(304, ""),
+                CodePair::new_str(304, "Great MLEADER {\\fArial;content}"),
                 CodePair::new_f64(11, 0.0),
                 CodePair::new_f64(21, 0.0),
                 CodePair::new_f64(31, 1.0),
@@ -2506,14 +2608,31 @@ mod tests {
         // Assert
         match entity.specific {
             EntityType::MLeader(ref mleader) => {
-                assert_eq!(mleader.has_dogleg, true);
-                assert_eq!(mleader.has_landing, true);
+                assert_eq!(mleader.enable_dogleg, true);
+                assert_eq!(mleader.enable_dogleg, true);
                 assert_eq!(mleader.dogleg_length, 3000.366019534463);
                 assert_eq!(
                     mleader.dogleg_vector,
                     Vector::new(-0.2644180576221713, -0.9644081557117392, 0.0)
                 );
                 assert_eq!(mleader.vertices.len(), 2);
+
+                // Text content
+                assert_eq!(mleader.content_type, MLeaderContentType::MTextContent);
+                assert_eq!(
+                    mleader.default_text_contents,
+                    "Great MLEADER {\\fArial;content}"
+                );
+
+                // base point
+                assert_eq!(
+                    mleader.content_base_point,
+                    Point {
+                        x: 676536270.82997,
+                        y: 6147398029.870995,
+                        z: 41.18369923159479
+                    }
+                );
 
                 // Dogleg included vertices
                 assert_eq!(
@@ -2536,11 +2655,222 @@ mod tests {
                         }
                     ]
                 );
+
+                // Text normal direction (11,21,31)
+                assert_eq!(mleader.text_normal_direction, Vector::new(0.0, 0.0, 1.0));
+
+                // Text location (12,22,32)
+                assert_eq!(
+                    mleader.text_location,
+                    Point {
+                        x: 676536406.164786,
+                        y: 6147397578.003218,
+                        z: 41.18369923159479
+                    }
+                );
+
+                // Text properties
+                assert_eq!(mleader.text_height, 500.0);
+                assert_eq!(mleader.text_rotation, 4.444788527204954);
+                assert_eq!(mleader.text_width, 0.0);
+                assert_eq!(mleader.text_attachment, 1);
             }
             _ => panic!("expected a MLeader"),
         }
 
         assert_eq!(entity.common.layer, "Proj_ledninger$0$TF_K_---_Leader-");
+    }
+
+    #[test]
+    fn read_multi_leader_danish_text() {
+        // Arrange
+        let entity = read_entity(
+            "MULTILEADER",
+            vec![
+                CodePair::new_str(100, "AcDbEntity"),
+                CodePair::new_str(8, "L 50- - SÅLEDES UDFØRT Tekst"),
+                CodePair::new_i16(160, 2492),
+                CodePair::new_str(100, "AcDbMLeader"),
+                CodePair::new_i16(270, 2),
+                CodePair::new_str(300, "CONTEXT_DATA{"), // start of CONTEXT_DATA
+                CodePair::new_f64(40, 1.0),
+                CodePair::new_f64(10, 648648030.3511316),
+                CodePair::new_f64(20, 1174316399.052236),
+                CodePair::new_f64(30, 0.0),
+                CodePair::new_f64(41, 300.0),
+                CodePair::new_f64(140, 200.0),
+                CodePair::new_f64(145, 100.0),
+                CodePair::new_i16(174, 1),
+                CodePair::new_i16(175, 1),
+                CodePair::new_i16(176, 0),
+                CodePair::new_i16(177, 0),
+                CodePair::new_i16(290, 1),
+                CodePair::new_str(304, "{\\fArial|b1|i0|c0|p34;FV01B17\\PDK }8.50\\P{\\fArial|b1|i0|c0|p34;IK }6.64^J{\\fArial|b1|i0|c0|p34;UK }6.27\\P{\\fArial|b1|i0|c0|p34;BK }5.60"),
+                CodePair::new_f64(11, 0.0),
+                CodePair::new_f64(21, 0.0),
+                CodePair::new_f64(31, 1.0),
+                CodePair::new_i16(340, 17), // 11 in hex is 17
+                CodePair::new_f64(12, 648648188.7703227),
+                CodePair::new_f64(22, 1174316489.480647),
+                CodePair::new_f64(32, 0.0),
+                CodePair::new_f64(13, 0.8907119816332103),
+                CodePair::new_f64(23, -0.4545681090607213),
+                CodePair::new_f64(33, 0.0),
+                CodePair::new_f64(42, 5.811298035900279),
+                CodePair::new_f64(43, 0.0),
+                CodePair::new_f64(44, 0.0),
+                CodePair::new_f64(45, 1.0),
+                CodePair::new_i16(170, 1),
+                CodePair::new_i32(90, -1073741824),
+                CodePair::new_i16(171, 1),
+                CodePair::new_i16(172, 5),
+                CodePair::new_i32(91, -1073741824),
+                CodePair::new_f64(141, 1.199999999999999),
+                CodePair::new_i32(92, 0),
+                CodePair::new_i16(291, 1),
+                CodePair::new_i16(292, 1),
+                CodePair::new_i16(173, 0),
+                CodePair::new_i16(293, 0),
+                CodePair::new_f64(142, 0.0),
+                CodePair::new_f64(143, 0.0),
+                CodePair::new_i16(294, 0),
+                CodePair::new_i16(295, 0),
+                CodePair::new_i16(296, 0),
+                CodePair::new_f64(110, 648652444.1320328),
+                CodePair::new_f64(120, 1174314908.43074),
+                CodePair::new_f64(130, 0.0),
+                CodePair::new_f64(111, 0.8907119816332103),
+                CodePair::new_f64(121, -0.4545681090607213),
+                CodePair::new_f64(131, 0.0),
+                CodePair::new_f64(112, 0.4545681090607213),
+                CodePair::new_f64(122, 0.8907119816332103),
+                CodePair::new_f64(132, 0.0),
+                CodePair::new_i16(297, 0),
+                CodePair::new_str(302, "LEADER{"), // start of LEADER
+                CodePair::new_i16(290, 1),
+                CodePair::new_i16(291, 1),
+                CodePair::new_f64(10, 648650186.7733452),
+                CodePair::new_f64(20, 1174315298.538503),
+                CodePair::new_f64(30, 0.0),
+                CodePair::new_f64(11, -0.8907119816332102), // Dogleg direction vector x
+                CodePair::new_f64(21, 0.4545681090607215),  // Dogleg direction vector y
+                CodePair::new_f64(31, 0.0),                 // Dogleg direction vector z
+                CodePair::new_i32(90, 0),
+                CodePair::new_f64(40, 500.0000000000002), // dogleg length
+                CodePair::new_str(304, "LEADER_LINE{"),   // start of LEADER_LINE
+                CodePair::new_f64(10, 648652198.1563798),
+                CodePair::new_f64(20, 1174315906.356325),
+                CodePair::new_f64(30, 0.0),
+                CodePair::new_i32(91, 0),
+                CodePair::new_str(305, "}"), // end of LEADER_LINE
+                CodePair::new_i16(271, 0),
+                CodePair::new_str(303, "}"), // end of LEADER
+                CodePair::new_i16(272, 9),
+                CodePair::new_i16(273, 9),
+                CodePair::new_str(301, "}"), // end of CONTEXT_DATA
+                CodePair::new_i16(340, 302), // 12E in hex is 302
+                CodePair::new_i32(90, 67585696),
+                CodePair::new_i16(170, 1),
+                CodePair::new_i32(91, -1056964608),
+                CodePair::new_i16(341, 20), // 14 in hex is 20
+                CodePair::new_i16(171, -2),
+                CodePair::new_i16(290, 1),
+                CodePair::new_i16(291, 1),
+                CodePair::new_f64(41, 500.0),
+                CodePair::new_f64(42, 200.0),
+                CodePair::new_i16(172, 2),
+                CodePair::new_i16(343, 17), // 11 in hex is 17
+                CodePair::new_i16(173, 1),
+                CodePair::new_i32(95, 1),
+                CodePair::new_i16(174, 1),
+                CodePair::new_i16(175, 0),
+                CodePair::new_i32(92, -1056964608),
+                CodePair::new_i16(292, 1),
+                CodePair::new_i32(93, -1056964608),
+                CodePair::new_f64(10, 1.0),
+                CodePair::new_f64(20, 1.0),
+                CodePair::new_f64(30, 1.0),
+                CodePair::new_f64(43, 0.0),
+                CodePair::new_i16(176, 0),
+                CodePair::new_i16(293, 0),
+                CodePair::new_i16(294, 0),
+                CodePair::new_i16(178, 1),
+                CodePair::new_i16(179, 1),
+                CodePair::new_f64(45, 1.0),
+                CodePair::new_i16(271, 0),
+                CodePair::new_i16(272, 9),
+                CodePair::new_i16(273, 9),
+                CodePair::new_i16(295, 0),
+            ],
+        );
+
+        // Assert
+        match entity.specific {
+            EntityType::MLeader(ref mleader) => {
+                assert_eq!(mleader.enable_dogleg, true);
+                assert_eq!(mleader.dogleg_length, 500.0000000000002);
+                assert_eq!(
+                    mleader.dogleg_vector,
+                    Vector::new(-0.8907119816332102, 0.4545681090607215, 0.0)
+                );
+                assert_eq!(mleader.vertices.len(), 2);
+
+                // Text content - Danish utility planning text with formatting
+                assert_eq!(mleader.content_type, MLeaderContentType::MTextContent);
+                assert_eq!(mleader.default_text_contents, "{\\fArial|b1|i0|c0|p34;FV01B17\\PDK }8.50\\P{\\fArial|b1|i0|c0|p34;IK }6.64^J{\\fArial|b1|i0|c0|p34;UK }6.27\\P{\\fArial|b1|i0|c0|p34;BK }5.60");
+
+                // Base point
+                assert_eq!(
+                    mleader.content_base_point,
+                    Point {
+                        x: 648648030.3511316,
+                        y: 1174316399.052236,
+                        z: 0.0
+                    }
+                );
+
+                // Dogleg included vertices
+                assert_eq!(
+                    mleader.get_vertices(),
+                    vec![
+                        Point {
+                            x: 648649741.4173545,
+                            y: 1174315525.8225574,
+                            z: 0.0,
+                        },
+                        Point {
+                            x: 648650186.7733452,
+                            y: 1174315298.538503,
+                            z: 0.0,
+                        },
+                        Point {
+                            x: 648652198.1563798,
+                            y: 1174315906.356325,
+                            z: 0.0,
+                        }
+                    ]
+                );
+
+                // Text location for Danish test
+                assert_eq!(
+                    mleader.text_location,
+                    Point {
+                        x: 648648188.7703227,
+                        y: 1174316489.480647,
+                        z: 0.0
+                    }
+                );
+
+                assert_eq!(mleader.text_normal_direction, Vector::new(0.0, 0.0, 1.0));
+
+                // Text properties for Danish test
+                assert_eq!(mleader.text_height, 300.0);
+                assert_eq!(mleader.text_rotation, 5.811298035900279);
+            }
+            _ => panic!("expected a MLeader"),
+        }
+
+        assert_eq!(entity.common.layer, "L 50- - SÅLEDES UDFØRT Tekst");
     }
 
     #[test]

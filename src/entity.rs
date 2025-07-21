@@ -1895,7 +1895,9 @@ impl Entity {
                 pairs.push(CodePair::new_i16(74, v.polyface_mesh_vertex_index4 as i16));
             }
         }
-        if version >= AcadVersion::R2010 {
+
+        // Even though the identifier is part of the spec https://help.autodesk.com/view/OARX/2025/ENU/?guid=GUID-0741E831-599E-4CBF-91E1-8ADBCFD6556D AutoCAD can't handle 91 group code. So we do not write it for R2018 and later.
+        if version >= AcadVersion::R2010 && !v.is_3d_polyline_vertex() {
             pairs.push(CodePair::new_i32(91, v.identifier));
         }
         true

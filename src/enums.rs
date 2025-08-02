@@ -1415,22 +1415,42 @@ pub enum UnitZeroSuppression {
 }
 
 enum_from_primitive! {
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
-pub enum MLeaderContentType {
-    None = 0,
-    BlockContent = 1,
-    MTextContent = 2,
-    TolreanceContent = 3,
-}
+    #[derive(Clone, Copy, Debug, PartialEq)]
+    #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+    pub enum MLeaderContentType {
+        None = 0,
+        BlockContent = 1,
+        MTextContent = 2,
+        ToleranceContent = 3,
+    }
 }
 
 enum_from_primitive! {
-#[derive(Clone, Copy, Debug, PartialEq)]
-#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
-pub enum MLeaderLineType {
-    None = 0,
-    Straight = 1,
-    Spline = 2,
+    #[derive(Clone, Copy, Debug, PartialEq)]
+    #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+    pub enum MLeaderLineType {
+        None = 0,
+        Straight = 1,
+        Spline = 2,
+    }
 }
+
+enum_from_primitive! {
+    #[derive(Clone, Copy, Debug, PartialEq)]
+    #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+    pub enum HatchStyle {
+        OddParity = 0,
+        OutermostAreaOnly = 1,
+        EntireArea = 2,
+    }
+}
+
+enum_from_primitive! {
+    #[derive(Clone, Copy, Debug, PartialEq)]
+    #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+    pub enum HatchPatternType {
+        UserDefined = 0,
+        Predefined = 1,
+        Custom = 2,
+    }
 }

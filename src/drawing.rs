@@ -20,6 +20,7 @@ use crate::object_iter::ObjectIter;
 
 use crate::block::Block;
 use crate::class::Class;
+use crate::ird_object::IrdObjRecord;
 
 use crate::code_pair_iter::{new_code_pair_iter_from_reader, CodePairIter};
 use crate::code_pair_writer::CodePairWriter;
@@ -72,6 +73,8 @@ pub struct Drawing {
     __entities: Vec<Entity>,
     /// Internal collection of objects.
     __objects: Vec<Object>,
+    /// Internal collection of IRD Records
+    __ird_records: Vec<IrdObjRecord>,
 
     /// The thumbnail image preview of the drawing.
     #[cfg_attr(feature = "serialize", serde(skip))]
@@ -184,6 +187,7 @@ impl Drawing {
         self.add_entities_pairs(&mut pairs, write_handles);
         self.add_objects_pairs(&mut pairs);
         self.add_thumbnail_pairs(&mut pairs)?;
+        self.add_dictionary_pairs(&mut pairs)?;
         pairs.push(CodePair::new_str(0, "EOF"));
         Ok(pairs)
     }
@@ -456,6 +460,11 @@ impl Drawing {
         // ensure invariants
         self.add_object_no_handle_set(obj)
     }
+    /// Adds an IRD record
+    pub fn add_ird_record(&mut self, mut record: IrdObjRecord) -> &IrdObjRecord {
+        record.handle = self.next_handle();
+        self.add_ird_record_no_handle_set(record)
+    }
     /// Removes the specified `Object` from the `Drawing`.
     pub fn remove_object(&mut self, index: usize) -> Option<Object> {
         Drawing::remove_item(&mut self.__objects, index)
@@ -689,6 +698,10 @@ impl Drawing {
         self.ensure_view_is_present(&obj);
         self.__objects.push(obj);
         self.__objects.last().unwrap()
+    }
+    fn add_ird_record_no_handle_set(&mut self, record: IrdObjRecord) -> &IrdObjRecord {
+        self.__ird_records.push(record);
+        self.__ird_records.last().unwrap()
     }
     pub(crate) fn add_app_id_no_handle_set(&mut self, app_id: AppId) -> &AppId {
         // TODO: ensure invariants
@@ -983,6 +996,16 @@ impl Drawing {
             }
         }
         Ok(())
+    }
+    pub(crate) fn add_ird_object_pairs(&self, pairs: &mut Vec<CodePair>) {
+        if self.__ird_records.is_empty() {
+        }
+            return;
+        for c in &self.__ird_records {
+            c.add_code_pairs(pairs);
+        }
+
+        pairs.push(CodePair::new_str(0, "ENDSEC"));
     }
     fn read_sections(drawing: &mut Drawing, iter: &mut CodePairPutBack) -> DxfResult<()> {
         loop {

@@ -143,6 +143,8 @@ mod thumbnail;
 mod drawing;
 pub use crate::drawing::Drawing;
 
+pub mod ird_object;
+
 mod drawing_item;
 pub use crate::drawing_item::{DrawingItem, DrawingItemMut};
 

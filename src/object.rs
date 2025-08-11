@@ -2309,4 +2309,52 @@ mod tests {
             }
         }
     }
+
+    #[test]
+    fn geodata_write_object() {
+        let mut drawing = Drawing::new();
+        drawing.add_object(Object {
+            common: Default::default(),
+            specific: ObjectType::GeoData(GeoData::default()),
+        });
+
+        drawing.header.version = AcadVersion::R2018;
+        assert_contains_pairs(
+            &drawing,
+            vec![
+                CodePair::new_str(0, "GEODATA"),
+                CodePair::new_str(5, "1E"),
+                CodePair::new_str(100, "AcDbGeoData"),
+                CodePair::new_i32(90, 1), // version
+                CodePair::new_i16(70, 0), // flags
+                CodePair::new_f64(10, 0.0), // origin x
+                CodePair::new_f64(20, 0.0), // origin y
+                CodePair::new_f64(30, 0.0), // origin z
+                CodePair::new_f64(11, 0.0), // north direction x
+                CodePair::new_f64(21, 0.0), // north direction y
+                CodePair::new_f64(31, 0.0), // north direction z
+                CodePair::new_f64(12, 0.0), // north direction x (2nd point)
+                CodePair::new_f64(22, 0.0), // north direction y (2nd point)
+                CodePair::new_f64(40, 1.0), // scale x
+                CodePair::new_f64(41, 1.0), // scale y
+                CodePair::new_i32(91, 0), // geodetic coordinate system
+                CodePair::new_i32(92, 0), // vertical coordinate system
+                CodePair::new_f64(210, 0.0), // geodetic coordinate system x
+                CodePair::new_f64(220, 0.0), // geodetic coordinate system y
+                CodePair::new_f64(230, 1.0), // geodetic
+                CodePair::new_i32(95, 1), // geodetic coordinate system type
+                CodePair::new_bool(294, false), // geodetic coordinate system is local
+                CodePair::new_f64(141, 1.0), // geodetic
+                CodePair::new_f64(142, 0.0), // geodetic
+                CodePair::new_f64(143, 0.0), // geodetic
+                CodePair::new_str(301, ""), // geodetic coordinate system name
+                CodePair::new_str(302, ""), // geodetic coordinate system description
+                CodePair::new_str(305, ""), // geodetic coordinate system authority
+                CodePair::new_str(306, ""), // geodetic coordinate system code
+                CodePair::new_str(307, ""), // geodetic coordinate system version
+                CodePair::new_i32(93, 0), // vertical coordinate system type
+                CodePair::new_i32(96, 0), // vertical coordinate system type
+            ],
+        );
+    }
 }

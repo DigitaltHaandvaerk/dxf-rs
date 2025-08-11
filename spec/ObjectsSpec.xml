@@ -206,7 +206,7 @@
   GEODATA
 
   -->
-  <Object Name="GeoData" SubclassMarker="" TypeString="GEODATA" MinVersion="R2010">
+  <Object Name="GeoData" SubclassMarker="AcDbGeoData" TypeString="GEODATA" MinVersion="R2010">
     <Field Name="version" Code="90" Type="GeoDataVersion" DefaultValue="GeoDataVersion::R2009" ReadConverter="enum_from_number!(GeoDataVersion, R2009, from_i32, {})" WriteConverter="{} as i32" />
     <Field Name="coordinate_type" Code="70" Type="DesignCoordinateType" DefaultValue="DesignCoordinateType::Unknown" ReadConverter="enum_from_number!(DesignCoordinateType, Unknown, from_i16, {})" WriteConverter="{} as i16" />
     <Field Name="design_point" Code="10" Type="Point" DefaultValue="Point::origin()" CodeOverrides="10,20,30" />
@@ -223,6 +223,7 @@
     <Field Name="sea_level_elevation" Code="142" Type="f64" DefaultValue="0.0" />
     <Field Name="coordinate_projection_radius" Code="143" Type="f64" DefaultValue="0.0" />
     <Field Name="coordinate_system_definition" Code="301" Type="String" DefaultValue="String::new()" />
+    <Field Name="coordinate_system_xml_definition" Code="303" Type="String" DefaultValue="vec![]" AllowMultiples="true" />
     <Field Name="geo_rss_tag" Code="302" Type="String" DefaultValue="String::new()" />
     <Field Name="observation_from_tag" Code="305" Type="String" DefaultValue="String::new()" />
     <Field Name="observation_to_tag" Code="306" Type="String" DefaultValue="String::new()" />
@@ -239,6 +240,7 @@
     <Field Name="__face_point_index_y" Code="98" Type="f64" DefaultValue="vec![]" AllowMultiples="true" ReadConverter="f64::from({})" />
     <Field Name="__face_point_index_z" Code="99" Type="f64" DefaultValue="vec![]" AllowMultiples="true" ReadConverter="f64::from({})" />
     <WriteOrder>
+      <WriteSpecificValue Code="100" Value='&amp;String::from("AcDbGeoData")' />
       <WriteField Field="version" />
       <WriteField Field="coordinate_type" />
       <WriteField Field="design_point" />
@@ -255,6 +257,7 @@
       <WriteField Field="sea_level_elevation" />
       <WriteField Field="coordinate_projection_radius" />
       <WriteField Field="coordinate_system_definition" />
+      <WriteField Field="coordinate_system_xml_definition" />
       <WriteField Field="geo_rss_tag" />
       <WriteField Field="observation_from_tag" />
       <WriteField Field="observation_to_tag" />

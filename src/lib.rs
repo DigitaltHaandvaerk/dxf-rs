@@ -203,6 +203,8 @@ pub use crate::line_weight::LineWeight;
 mod entity;
 pub use crate::entity::LwPolylineVertex;
 
+mod mleader_entity;
+
 mod object;
 pub use crate::object::{GeoMeshPoint, MLineStyleElement};
 

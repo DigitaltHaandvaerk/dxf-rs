@@ -703,50 +703,128 @@
     </WriteOrder>
   </Entity>
   <!--
-
-  MLEADER
-
-  -->
-
-  <!--
-    WARNING! This MLeader is kind of crazy and the chances of it not working properly quite high because of the complexity of the MLeader entity.
-
-    This implementation is only for getting the geometric shape of the lines of the MLeader and text content. Documentation we follow to create the MLeader entity:
-    1. https://atlight.github.io/formats/dxf-leader.html
-    2. https://help.autodesk.com/view/OARX/2024/ENU/?guid=GUID-72D20B8C-0F5E-4993-BEB7-0FCF94F32BE0
-
-    TODO: Implement the rest of the MLeader entity fields.
-
-    CONTEXT_STR = "CONTEXT_DATA{"
-    LEADER_STR = "LEADER{"
-    LEADER_LINE_STR = "LEADER_LINE{"
-    START_CONTEXT_DATA = 300
-    END_CONTEXT_DATA = 301
-    START_LEADER = 302
-    END_LEADER = 303
-    START_LEADER_LINE = 304
-    END_LEADER_LINE = 305
+    MLEADER
     -->
-  <Entity Name="MLeader" SubclassMarker="AcDbMLeader" TypeString="MULTILEADER" HasXData="false" GenerateReaderFunction="false" GenerateWriterFunction="false" MinVersion="R2018" >
-    <!-- Common MLeader Group Codes -->
-    <Field Name="content_type" Code="172" Type="MLeaderContentType" DefaultValue="MLeaderContentType::None  " ReadConverter="enum_from_number!(MLeaderContentType, MTextContent, from_i16, {})" WriteConverter="{} as i16" />
-    <Field Name="dogleg_length" Code="41" Type="f64" DefaultValue="0.0" />
-    <Field Name="enable_landing" Code="290" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
-    <Field Name="enable_dogleg" Code="291" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
-    <!-- MLeader Context Data Group Codes -->
-    <Field Name="default_text_contents" Code="304" Type="String" DefaultValue="String::new()" />
-    <Field Name="content_base_point" Code="10" Type="Point" DefaultValue="Point::origin()" CodeOverrides="10,20,30" />
-    <Field Name="text_normal_direction" Code="11" Type="Vector" DefaultValue="Vector::zero()" CodeOverrides="11,21,31" />
-    <Field Name="text_location" Code="12" Type="Point" DefaultValue="Point::origin()" CodeOverrides="12,22,32" />
-    <Field Name="text_height" Code="41" Type="f64" DefaultValue="0.0" />
-    <Field Name="text_rotation" Code="42" Type="f64" DefaultValue="0.0" />
-    <Field Name="text_width" Code="43" Type="f64" DefaultValue="0.0" />
-    <Field Name="text_attachment" Code="171" Type="i16" DefaultValue="0" />
-    <!-- MLeader Leader Node Group Codes -->
-    <Field Name="dogleg_vector" Code="11" Type="Vector" DefaultValue="Vector::zero()" CodeOverrides="11,21,31" />
-    <!-- MLeader Leader Line Group Codes -->
-    <Field Name="vertices" Code="10" Type="Point" DefaultValue="vec![]" AllowMultiples="true" CodeOverrides="10,20,30"/>
-  </Entity>
+    <!--
+      1. https://atlight.github.io/formats/dxf-leader.html
+      2. https://help.autodesk.com/view/OARX/2024/ENU/?guid=GUID-72D20B8C-0F5E-4993-BEB7-0FCF94F32BE0
+      TODO: Implement the rest of the MLeader entity fields.
+      CONTEXT_STR = "CONTEXT_DATA{"
+      LEADER_STR = "LEADER{"
+      LEADER_LINE_STR = "LEADER_LINE{"
+      START_CONTEXT_DATA = 300
+      END_CONTEXT_DATA = 301
+      START_LEADER = 302
+      END_LEADER = 303
+      START_LEADER_LINE = 304
+      END_LEADER_LINE = 305
+      -->
+    <Entity Name="MLeader" SubclassMarker="AcDbMLeader" TypeString="MULTILEADER" HasXData="false" GenerateReaderFunction="false" GenerateWriterFunction="false" MinVersion="R2018" >
+      
+      <!-- Common MLeader Group Codes -->
+      <Field Name="leader_style_id" Code="340" Type="String" DefaultValue="String::new()" />
+      <Field Name="property_override_flag" Code="90" Type="i32" DefaultValue="0" />
+      <Field Name="leader_line_type" Code="170" Type="MLeaderLineType" DefaultValue="MLeaderLineType::Straight" ReadConverter="enum_from_number!(MLeaderLineType, StraightLine, from_i16, {})" WriteConverter="{} as i16" />
+      <Field Name="leader_line_color" Code="91" Type="i32" DefaultValue="256" />
+      <Field Name="leader_line_type_id" Code="341" Type="String" DefaultValue="String::new()" />
+      <Field Name="leader_line_weight" Code="171" Type="i16" DefaultValue="-1" />
+      <Field Name="enable_landing" Code="290" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
+      <Field Name="enable_dogleg" Code="291" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
+      <Field Name="dogleg_length" Code="41" Type="f64" DefaultValue="0.0" />
+      <Field Name="arrowhead_id" Code="342" Type="String" DefaultValue="String::new()" />
+      <Field Name="arrowhead_size" Code="42" Type="f64" DefaultValue="0.180" />
+      <Field Name="content_type" Code="172" Type="MLeaderContentType" DefaultValue="MLeaderContentType::None" ReadConverter="enum_from_number!(MLeaderContentType, MTextContent, from_i16, {})" WriteConverter="{} as i16" />
+      <Field Name="text_style_id" Code="343" Type="String" DefaultValue="String::new()" />
+      <Field Name="text_left_attachment_type" Code="173" Type="i16" DefaultValue="1" />
+      <Field Name="text_right_attachment_type" Code="95" Type="i16" DefaultValue="1" />
+      <Field Name="text_angle_type" Code="174" Type="i16" DefaultValue="0" />
+      <Field Name="text_alignment_type" Code="175" Type="i16" DefaultValue="0" />
+      <Field Name="text_color" Code="92" Type="i32" DefaultValue="256" />
+      <Field Name="enable_frame_text" Code="292" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
+      <!-- <Field Name="block_content_id" Code="344" Type="String" DefaultValue="String::new()" /> -->
+      <!-- <Field Name="block_content_color" Code="93" Type="i32" DefaultValue="256" /> -->
+      <!-- <Field Name="block_content_scale" Code="10" Type="f64" DefaultValue="1.0" /> -->
+      <!-- <Field Name="block_content_rotation" Code="43" Type="f64" DefaultValue="0.0" /> -->
+      <!-- <Field Name="block_content_connection_type" Code="176" Type="i16" DefaultValue="0" /> -->
+      <Field Name="enable_annotation_scale" Code="293" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
+      <Field Name="arrowhead_index" Code="94" Type="i32" DefaultValue="0" />
+      <Field Name="arrowhead_id_ref" Code="345" Type="String" DefaultValue="String::new()" />
+      <!-- <Field Name="block_attribute_id" Code="330" Type="String" DefaultValue="String::new()" /> -->
+      <!-- <Field Name="block_attribute_index" Code="177" Type="i16" DefaultValue="0" /> -->
+      <!-- <Field Name="block_attribute_width" Code="44" Type="f64" DefaultValue="0.0" /> -->
+      <!-- <Field Name="block_attribute_text_string" Code="302" Type="String" DefaultValue="String::new()" /> -->
+      <Field Name="text_direction_negative" Code="294" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
+      <Field Name="text_align_in_ipe" Code="178" Type="i16" DefaultValue="0" />
+      <Field Name="text_attachment_point" Code="179" Type="i16" DefaultValue="1" />
+      <Field Name="text_attachment_direction" Code="271" Type="i16" DefaultValue="0" />
+      <Field Name="bottom_text_attachment_direction" Code="272" Type="i16" DefaultValue="9" />
+      <Field Name="top_text_attachment_direction" Code="273" Type="i16" DefaultValue="9" />
+      
+      <!-- MLeader Context Data Group Codes -->
+      <Field Name="content_scale" Code="40" Type="f64" DefaultValue="1.0" />
+      <Field Name="content_base_point" Code="10" Type="Point" DefaultValue="Point::origin()" CodeOverrides="10,20,30" />
+      <Field Name="text_height" Code="41" Type="f64" DefaultValue="0.0" />
+      <Field Name="arrow_head_size" Code="140" Type="f64" DefaultValue="0.180" />
+      <Field Name="landing_gap" Code="145" Type="f64" DefaultValue="0.120" />
+      <Field Name="has_m_text" Code="290" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
+      <Field Name="default_text_contents" Code="304" Type="String" DefaultValue="String::new()" />
+      <Field Name="text_normal_direction" Code="11" Type="Vector" DefaultValue="Vector::zero()" CodeOverrides="11,21,31" />
+      <Field Name="text_style_id_context" Code="340" Type="String" DefaultValue="String::new()" />
+      <Field Name="text_location" Code="12" Type="Point" DefaultValue="Point::origin()" CodeOverrides="12,22,32" />
+      <Field Name="text_direction" Code="13" Type="Vector" DefaultValue="Vector::x_axis()" CodeOverrides="13,23,33" />
+      <Field Name="text_rotation" Code="42" Type="f64" DefaultValue="0.0" />
+      <Field Name="text_width" Code="43" Type="f64" DefaultValue="0.0" />
+      <Field Name="text_height_context" Code="44" Type="f64" DefaultValue="0.0" />
+      <Field Name="text_line_spacing_factor" Code="45" Type="f64" DefaultValue="1.0" />
+      <Field Name="text_line_spacing_style" Code="170" Type="i16" DefaultValue="1" />
+      <Field Name="text_color_context" Code="90" Type="i32" DefaultValue="256" />
+      <Field Name="text_attachment" Code="171" Type="i16" DefaultValue="0" />
+      <Field Name="text_flow_direction" Code="172" Type="i16" DefaultValue="1" />
+      <Field Name="text_background_color" Code="91" Type="i32" DefaultValue="256" />
+      <Field Name="text_background_scale_factor" Code="141" Type="f64" DefaultValue="1.5" />
+      <Field Name="text_background_transparency" Code="92" Type="i32" DefaultValue="0" />
+      <Field Name="is_text_background_color_on" Code="291" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
+      <Field Name="is_text_background_fill_on" Code="292" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
+      <Field Name="text_column_type" Code="173" Type="i16" DefaultValue="0" />
+      <Field Name="use_text_auto_height" Code="293" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
+      <Field Name="text_column_width" Code="142" Type="f64" DefaultValue="0.0" />
+      <Field Name="text_column_gutter_width" Code="143" Type="f64" DefaultValue="0.0" />
+      <Field Name="text_column_flow_reversed" Code="294" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
+      <Field Name="text_column_height" Code="144" Type="f64" DefaultValue="0.0" />
+      <Field Name="text_use_word_break" Code="295" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
+      <Field Name="has_block" Code="296" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
+      <!-- <Field Name="block_content_id_context" Code="341" Type="String" DefaultValue="String::new()" /> -->
+      <!-- <Field Name="block_content_normal_direction" Code="14" Type="Vector" DefaultValue="Vector::zero()" CodeOverrides="14,24,34" /> -->
+      <!-- <Field Name="block_content_position" Code="15" Type="Point" DefaultValue="Point::origin()" CodeOverrides="15,25,35" /> -->
+      <!-- <Field Name="block_content_scale_context" Code="16" Type="f64" DefaultValue="1.0" /> -->
+      <!-- <Field Name="block_content_rotation_context" Code="46" Type="f64" DefaultValue="0.0" /> -->
+      <!-- <Field Name="block_content_color_context" Code="93" Type="i32" DefaultValue="256" /> -->
+      <!-- <Field Name="block_transformation_matrix" Code="47" Type="f64" DefaultValue="0.0" /> -->
+      <!-- <Field Name="mleader_plane_origin_point" Code="110" Type="Point" DefaultValue="Point::origin()" CodeOverrides="110,120,130" /> -->
+      <!-- <Field Name="mleader_plane_x_axis_direction" Code="111" Type="Vector" DefaultValue="Vector::x_axis()" /> -->
+      <!-- <Field Name="mleader_plane_y_axis_direction" Code="112" Type="Vector" DefaultValue="Vector::y_axis()" /> -->
+      <!-- <Field Name="mleader_plane_normal_reversed" Code="297" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" /> -->
+      <Field Name="vertex" Code="10" Type="Point" DefaultValue="Point::origin()" CodeOverrides="10,20,30" />
+      <Field Name="break_point_index" Code="90" Type="i32" DefaultValue="0" />
+      
+      <!-- MLeader Leader Node Group Codes -->
+      <Field Name="has_set_last_leader_line_point" Code="290" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
+      <Field Name="has_set_dogleg_vector" Code="291" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
+      <Field Name="last_leader_line_point" Code="10" Type="Point" DefaultValue="Point::origin()" CodeOverrides="10,20,30" />
+      <Field Name="dogleg_vector" Code="11" Type="Vector" DefaultValue="Vector::x_axis()" CodeOverrides="11,21,31" />
+      <Field Name="break_start_point" Code="12" Type="Point" DefaultValue="Point::origin()" CodeOverrides="12,22,32" />
+      <Field Name="break_end_point" Code="13" Type="Point" DefaultValue="Point::origin()" CodeOverrides="13,23,33" />
+      <Field Name="leader_branch_index" Code="90" Type="i32" DefaultValue="0" />
+      <Field Name="dogleg_length_leader" Code="40" Type="f64" DefaultValue="0.0" />
+      
+      <!-- MLeader Leader Line Group Codes -->
+      <Field Name="vertices" Code="10" Type="Point" DefaultValue="vec![]" AllowMultiples="true" CodeOverrides="10,20,30"/>
+      <Field Name="break_point_index_line" Code="90" Type="i32" DefaultValue="0" />
+      <Field Name="break_start_point_line" Code="11" Type="Point" DefaultValue="Point::origin()" CodeOverrides="11,21,31" />
+      <Field Name="break_end_point_line" Code="12" Type="Point" DefaultValue="Point::origin()" CodeOverrides="12,22,32" />
+      <Field Name="leader_line_index" Code="91" Type="i32" DefaultValue="0" />
+      
+    </Entity>
   <!--
 
   MTEXT

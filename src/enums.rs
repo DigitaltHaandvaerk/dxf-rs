@@ -1424,3 +1424,13 @@ pub enum MLeaderContentType {
     TolreanceContent = 3,
 }
 }
+
+enum_from_primitive! {
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+pub enum MLeaderLineType {
+    None = 0,
+    Straight = 1,
+    Spline = 2,
+}
+}

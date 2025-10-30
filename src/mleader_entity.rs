@@ -29,7 +29,10 @@ fn add_mleader_common_properties(pairs: &mut Vec<CodePair>, mleader: &MLeader) {
     }
     pairs.push(CodePair::new_i32(90, mleader.property_override_flag));
     pairs.push(CodePair::new_i16(170, mleader.leader_line_type as i16));
-    pairs.push(CodePair::new_i32(91, mleader.leader_line_color));
+    pairs.push(CodePair::new_i32(
+        91,
+        mleader.leader_line_color.to_mleader_raw_value(),
+    ));
 
     if !mleader.leader_line_type_id.is_empty() {
         pairs.push(CodePair::new_str(341, &mleader.leader_line_type_id));
@@ -55,7 +58,10 @@ fn add_mleader_common_properties(pairs: &mut Vec<CodePair>, mleader: &MLeader) {
     pairs.push(CodePair::new_i16(95, mleader.text_right_attachment_type));
     pairs.push(CodePair::new_i16(174, mleader.text_angle_type));
     pairs.push(CodePair::new_i16(175, mleader.text_alignment_type));
-    pairs.push(CodePair::new_i32(92, mleader.text_color));
+    pairs.push(CodePair::new_i32(
+        92,
+        mleader.text_color.to_mleader_raw_value(),
+    ));
     pairs.push(CodePair::new_i16(292, as_i16(mleader.enable_frame_text)));
     // if !mleader.block_content_id.is_empty() {
     //     pairs.push(CodePair::new_str(344, &mleader.block_content_id));
@@ -145,10 +151,16 @@ fn add_mleader_text_properties(pairs: &mut Vec<CodePair>, mleader: &MLeader) {
     pairs.push(CodePair::new_f64(44, mleader.text_height_context));
     pairs.push(CodePair::new_f64(45, mleader.text_line_spacing_factor));
     pairs.push(CodePair::new_i16(170, mleader.text_line_spacing_style));
-    pairs.push(CodePair::new_i32(90, mleader.text_color_context));
+    pairs.push(CodePair::new_i32(
+        90,
+        mleader.text_color_context.to_mleader_raw_value(),
+    ));
     pairs.push(CodePair::new_i16(171, mleader.text_attachment));
     pairs.push(CodePair::new_i16(172, mleader.text_flow_direction));
-    pairs.push(CodePair::new_i32(91, mleader.text_background_color));
+    pairs.push(CodePair::new_i32(
+        91,
+        mleader.text_background_color.to_mleader_raw_value(),
+    ));
     pairs.push(CodePair::new_f64(141, mleader.text_background_scale_factor));
     pairs.push(CodePair::new_i32(92, mleader.text_background_transparency));
     pairs.push(CodePair::new_i16(

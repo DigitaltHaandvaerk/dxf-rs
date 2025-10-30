@@ -3178,23 +3178,24 @@ mod tests {
                 CodePair::new_i16(284, 0),   // sentinel for DXF version
                 CodePair::new_str(100, "AcDbMLeader"),
                 // Version number
-                CodePair::new_i16(270, 2),
                 // Common MLeader Group Codes (before context data)
-                CodePair::new_i32(90, 0),    // property_override_flag
-                CodePair::new_i16(170, 1),   // leader_line_type (Straight)
-                CodePair::new_i32(91, 256),  // leader_line_color
-                CodePair::new_i16(171, -1),  // leader_line_weight
-                CodePair::new_i16(290, 1),   // enable_landing
-                CodePair::new_i16(291, 1),   // enable_dogleg
-                CodePair::new_f64(41, 0.3),  // dogleg_length
-                CodePair::new_f64(42, 0.18), // arrowhead_size
-                CodePair::new_i16(172, 2),   // content_type (MTextContent)
-                CodePair::new_i16(173, 1),   // text_left_attachment_type
-                CodePair::new_i16(95, 1),    // text_right_attachment_type
-                CodePair::new_i16(174, 0),   // text_angle_type
-                CodePair::new_i16(175, 0),   // text_alignment_type
-                CodePair::new_i32(92, 256),  // text_color
-                CodePair::new_i16(292, 1),   // enable_frame_text
+                CodePair::new_i16(270, 2),
+                CodePair::new_string(340, "Standard"), // start of LEADER
+                CodePair::new_i32(90, 0),              // property_override_flag
+                CodePair::new_i16(170, 1),             // leader_line_type (Straight)
+                CodePair::new_i32(91, -1073741824),    // leader_line_color
+                CodePair::new_i16(171, -1),            // leader_line_weight
+                CodePair::new_i16(290, 1),             // enable_landing
+                CodePair::new_i16(291, 1),             // enable_dogleg
+                CodePair::new_f64(41, 0.3),            // dogleg_length
+                CodePair::new_f64(42, 0.18),           // arrowhead_size
+                CodePair::new_i16(172, 2),             // content_type (MTextContent)
+                CodePair::new_i16(173, 1),             // text_left_attachment_type
+                CodePair::new_i16(95, 1),              // text_right_attachment_type
+                CodePair::new_i16(174, 0),             // text_angle_type
+                CodePair::new_i16(175, 0),             // text_alignment_type
+                CodePair::new_i32(92, -1073741824),    // text_color
+                CodePair::new_i16(292, 1),             // enable_frame_text
                 // CodePair::new_i32(93, 256), // block_content_color
                 // CodePair::new_f64(10, 1.0), // block_content_scale
                 // CodePair::new_f64(43, 0.0), // block_content_rotation
@@ -3235,10 +3236,10 @@ mod tests {
                 CodePair::new_f64(44, 0.0),   // text_height_context
                 CodePair::new_f64(45, 1.0),   // text_line_spacing_factor
                 CodePair::new_i16(170, 1),    // text_line_spacing_style
-                CodePair::new_i32(90, 256),   // text_color_context
+                CodePair::new_i32(90, -1073741824), // text_color_context
                 CodePair::new_i16(171, 1),    // text_attachment
                 CodePair::new_i16(172, 1),    // text_flow_direction
-                CodePair::new_i32(91, 256),   // text_background_color
+                CodePair::new_i32(91, -1073741824), // text_background_color
                 CodePair::new_f64(141, 1.5),  // text_background_scale_factor
                 CodePair::new_i32(92, 0),     // text_background_transparency
                 CodePair::new_i16(291, 0),    // is_text_background_color_on

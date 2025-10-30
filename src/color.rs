@@ -84,4 +84,39 @@ impl Color {
             -value
         }
     }
+
+    /// Converts standard ACI color to MULTILEADER RGBM raw value
+    pub fn to_mleader_raw_value(&self) -> i32 {
+        if self.is_by_layer() {
+            -1073741824 // 0xC0000000
+        } else if self.is_by_block() {
+            -1056964608 // 0xC1000000
+        } else if self.is_by_entity() {
+            // ByEntity doesn't exist in MULTILEADER, default to ByLayer
+            -1073741824
+        } else if self.is_turned_off() {
+            // Turned off - use ByLayer with special flag
+            -1073741824
+        } else if self.is_index() {
+            // ACI color index: encode as 0x03000000 | index
+            0x03000000 | (self.raw_value as i32)
+        } else {
+            // Default to ByLayer
+            -1073741824
+        }
+    }
+
+    /// Creates Color from MULTILEADER RGBM raw value
+    pub fn from_mleader_raw_value(raw: i32) -> Color {
+        match raw {
+            -1073741824 => Color::by_layer(), // 0xC0000000
+            -1056964608 => Color::by_block(), // 0xC1000000
+            _ if (raw & 0xFF000000u32 as i32) == 0x03000000 => {
+                // ACI color: extract lower byte
+                let index = (raw & 0xFF) as u8;
+                Color::from_index(index)
+            }
+            _ => Color::by_layer(), // Unknown: default to ByLayer
+        }
+    }
 }

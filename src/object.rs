@@ -15,6 +15,8 @@ use crate::code_pair_put_back::CodePairPutBack;
 use crate::enums::*;
 use crate::helper_functions::*;
 use crate::objects::*;
+use crate::entities::Entity;
+use crate::Handle;
 
 //------------------------------------------------------------------------------
 //                                                                  GeoMeshPoint
@@ -74,6 +76,20 @@ impl ObjectCommon {
     /// Ensures all values are valid.
     pub fn normalize(&mut self) {
         // nothing to do, but this method should still exist.
+    }
+}
+
+//------------------------------------------------------------------------------
+//                                                                  SortensTable
+//------------------------------------------------------------------------------
+impl SortentsTable {
+    // Add multiple entities with SAME sort order
+    pub fn add_entities_same_order(&mut self, entities: &[&Entity], sort_order: u64) {
+        let sort_handle = Handle(sort_order);
+        for entity in entities {
+            self.__entities_handle.push(entity.common.handle);
+            self.__sort_items_handle.push(sort_handle);
+        }
     }
 }
 
@@ -1647,6 +1663,15 @@ impl Object {
                 pairs.push(CodePair::new_i16(280, xr.duplicate_record_handling as i16));
                 for pair in &xr.data_pairs {
                     pairs.push(pair.clone());
+                }
+            }
+            ObjectType::SortentsTable(ref st) => {
+                pairs.push(CodePair::new_str(100, "AcDbSortentsTable"));
+                // Pair the two sort handles and entities together and write 331 then 5
+                for (entity_handle, sort_handle) in st.__entities_handle.iter()
+                    .zip(st.__sort_items_handle.iter()) {
+                    pairs.push(CodePair::new_string(331, &entity_handle.as_string()));
+                    pairs.push(CodePair::new_string(5, &sort_handle.as_string()));
                 }
             }
             _ => return false, // no custom writer

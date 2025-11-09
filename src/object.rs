@@ -12,10 +12,10 @@ use crate::{
 };
 
 use crate::code_pair_put_back::CodePairPutBack;
+use crate::entities::Entity;
 use crate::enums::*;
 use crate::helper_functions::*;
 use crate::objects::*;
-use crate::entities::Entity;
 use crate::Handle;
 
 //------------------------------------------------------------------------------
@@ -1668,8 +1668,11 @@ impl Object {
             ObjectType::SortentsTable(ref st) => {
                 pairs.push(CodePair::new_str(100, "AcDbSortentsTable"));
                 // Pair the two sort handles and entities together and write 331 then 5
-                for (entity_handle, sort_handle) in st.__entities_handle.iter()
-                    .zip(st.__sort_items_handle.iter()) {
+                for (entity_handle, sort_handle) in st
+                    .__entities_handle
+                    .iter()
+                    .zip(st.__sort_items_handle.iter())
+                {
                     pairs.push(CodePair::new_string(331, &entity_handle.as_string()));
                     pairs.push(CodePair::new_string(5, &sort_handle.as_string()));
                 }

@@ -52,7 +52,7 @@ impl Color {
             None
         }
     }
-    pub(crate) fn raw_value(&self) -> i16 {
+    pub fn raw_value(&self) -> i16 {
         self.raw_value
     }
     pub(crate) fn from_raw_value(val: i16) -> Color {

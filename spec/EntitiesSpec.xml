@@ -751,8 +751,8 @@
       <Field Name="arrowhead_size" Code="42" Type="f64" DefaultValue="0.180" />
       <Field Name="content_type" Code="172" Type="MLeaderContentType" DefaultValue="MLeaderContentType::None" ReadConverter="enum_from_number!(MLeaderContentType, MTextContent, from_i16, {})" WriteConverter="{} as i16" />
       <Field Name="text_style_id" Code="343" Type="String" DefaultValue="String::new()" />
-      <Field Name="text_left_attachment_type" Code="173" Type="i16" DefaultValue="1" />
-      <Field Name="text_right_attachment_type" Code="95" Type="i16" DefaultValue="1" />
+      <Field Name="text_left_attachment_type" Code="173" Type="TextAttachmentType" DefaultValue="TextAttachmentType::MiddleOfTop" ReadConverter="enum_from_number!(TextAttachmentType, MiddleOfTop, from_i16, {})" WriteConverter="{} as i16" />
+      <Field Name="text_right_attachment_type" Code="95" Type="TextAttachmentType" DefaultValue="TextAttachmentType::MiddleOfTop" ReadConverter="enum_from_number!(TextAttachmentType, MiddleOfTop, from_i16, {})" WriteConverter="{} as i16" />
       <Field Name="text_angle_type" Code="174" Type="i16" DefaultValue="0" />
       <Field Name="text_alignment_type" Code="175" Type="i16" DefaultValue="0" />
       <Field Name="text_color" Code="92" Type="Color" DefaultValue="Color::by_layer()" ReadConverter="Color::from_raw_value({})" WriteConverter="{}.raw_value()" />
@@ -761,20 +761,20 @@
       <!-- <Field Name="block_content_color" Code="93" Type="i32" DefaultValue="256" /> -->
       <!-- <Field Name="block_content_scale" Code="10" Type="f64" DefaultValue="1.0" /> -->
       <!-- <Field Name="block_content_rotation" Code="43" Type="f64" DefaultValue="0.0" /> -->
-      <!-- <Field Name="block_content_connection_type" Code="176" Type="i16" DefaultValue="0" /> -->
+      <Field Name="block_content_connection_type" Code="176" Type="i16" DefaultValue="0" />
       <Field Name="enable_annotation_scale" Code="293" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
       <Field Name="arrowhead_index" Code="94" Type="i32" DefaultValue="0" />
       <Field Name="arrowhead_id_ref" Code="345" Type="String" DefaultValue="String::new()" />
       <!-- <Field Name="block_attribute_id" Code="330" Type="String" DefaultValue="String::new()" /> -->
-      <!-- <Field Name="block_attribute_index" Code="177" Type="i16" DefaultValue="0" /> -->
+      <Field Name="block_attribute_index" Code="177" Type="i16" DefaultValue="0" />
       <!-- <Field Name="block_attribute_width" Code="44" Type="f64" DefaultValue="0.0" /> -->
       <!-- <Field Name="block_attribute_text_string" Code="302" Type="String" DefaultValue="String::new()" /> -->
       <Field Name="text_direction_negative" Code="294" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
       <Field Name="text_align_in_ipe" Code="178" Type="i16" DefaultValue="0" />
-      <Field Name="text_attachment_point" Code="179" Type="i16" DefaultValue="1" />
-      <Field Name="text_attachment_direction" Code="271" Type="i16" DefaultValue="0" />
-      <Field Name="bottom_text_attachment_direction" Code="272" Type="i16" DefaultValue="9" />
-      <Field Name="top_text_attachment_direction" Code="273" Type="i16" DefaultValue="9" />
+      <Field Name="text_attachment_point" Code="179" Type="AttachmentPoint" DefaultValue="AttachmentPoint::TopLeft" ReadConverter="enum_from_number!(AttachmentPoint, TopLeft, from_i16, {})" WriteConverter="{} as i16" />
+      <Field Name="text_attachment_direction" Code="271" Type="TextAttachmentDirection" DefaultValue="TextAttachmentDirection::Horizontal" ReadConverter="enum_from_number!(TextAttachmentDirection, Horizontal, from_i16, {})" WriteConverter="{} as i16" />
+      <Field Name="bottom_text_attachment_direction" Code="272" Type="BottomTextAttachmentDirection" DefaultValue="BottomTextAttachmentDirection::Center" ReadConverter="enum_from_number!(BottomTextAttachmentDirection, Center, from_i16, {})" WriteConverter="{} as i16" />
+      <Field Name="top_text_attachment_direction" Code="273" Type="TopTextAttachmentDirection" DefaultValue="TopTextAttachmentDirection::Center" ReadConverter="enum_from_number!(TopTextAttachmentDirection, Center, from_i16, {})" WriteConverter="{} as i16" />
       
       <!-- MLeader Context Data Group Codes -->
       <Field Name="content_scale" Code="40" Type="f64" DefaultValue="1.0" />
@@ -782,6 +782,13 @@
       <Field Name="text_height" Code="41" Type="f64" DefaultValue="0.0" />
       <Field Name="arrow_head_size" Code="140" Type="f64" DefaultValue="0.180" />
       <Field Name="landing_gap" Code="145" Type="f64" DefaultValue="0.120" />
+      <!-- Codes 174-177 in CONTEXT_DATA are not in the Autodesk DXF spec.
+           Reverse-engineered from AutoCAD-generated DXF files. AutoCAD writes and
+           expects these codes; without them, text box alignment breaks for left doglegs. -->
+      <Field Name="text_left_attachment_type_context" Code="174" Type="TextAttachmentType" DefaultValue="TextAttachmentType::MiddleOfTop" ReadConverter="enum_from_number!(TextAttachmentType, MiddleOfTop, from_i16, {})" WriteConverter="{} as i16" />
+      <Field Name="text_right_attachment_type_context" Code="175" Type="TextAttachmentType" DefaultValue="TextAttachmentType::MiddleOfTop" ReadConverter="enum_from_number!(TextAttachmentType, MiddleOfTop, from_i16, {})" WriteConverter="{} as i16" />
+      <Field Name="text_angle_type_context" Code="176" Type="i16" DefaultValue="0" />
+      <Field Name="text_alignment_type_context" Code="177" Type="i16" DefaultValue="0" />
       <Field Name="has_m_text" Code="290" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
       <Field Name="default_text_contents" Code="304" Type="String" DefaultValue="String::new()" />
       <Field Name="text_normal_direction" Code="11" Type="Vector" DefaultValue="Vector::zero()" CodeOverrides="11,21,31" />
@@ -794,7 +801,7 @@
       <Field Name="text_line_spacing_factor" Code="45" Type="f64" DefaultValue="1.0" />
       <Field Name="text_line_spacing_style" Code="170" Type="i16" DefaultValue="1" />
       <Field Name="text_color_context" Code="90" Type="Color" DefaultValue="Color::by_layer()" ReadConverter="Color::from_raw_value({})" WriteConverter="{}.raw_value()" />
-      <Field Name="text_attachment" Code="171" Type="i16" DefaultValue="0" />
+      <Field Name="text_attachment" Code="171" Type="TextAttachmentType" DefaultValue="TextAttachmentType::TopOfTop" ReadConverter="enum_from_number!(TextAttachmentType, TopOfTop, from_i16, {})" WriteConverter="{} as i16" />
       <Field Name="text_flow_direction" Code="172" Type="i16" DefaultValue="1" />
       <Field Name="text_background_color" Code="91" Type="Color" DefaultValue="Color::by_layer()" ReadConverter="Color::from_raw_value({})" WriteConverter="{}.raw_value()" />
       <Field Name="text_background_scale_factor" Code="141" Type="f64" DefaultValue="1.5" />
@@ -816,10 +823,10 @@
       <!-- <Field Name="block_content_rotation_context" Code="46" Type="f64" DefaultValue="0.0" /> -->
       <!-- <Field Name="block_content_color_context" Code="93" Type="i32" DefaultValue="256" /> -->
       <!-- <Field Name="block_transformation_matrix" Code="47" Type="f64" DefaultValue="0.0" /> -->
-      <!-- <Field Name="mleader_plane_origin_point" Code="110" Type="Point" DefaultValue="Point::origin()" CodeOverrides="110,120,130" /> -->
-      <!-- <Field Name="mleader_plane_x_axis_direction" Code="111" Type="Vector" DefaultValue="Vector::x_axis()" /> -->
-      <!-- <Field Name="mleader_plane_y_axis_direction" Code="112" Type="Vector" DefaultValue="Vector::y_axis()" /> -->
-      <!-- <Field Name="mleader_plane_normal_reversed" Code="297" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" /> -->
+      <Field Name="mleader_plane_origin_point" Code="110" Type="Point" DefaultValue="Point::origin()" CodeOverrides="110,120,130" />
+      <Field Name="mleader_plane_x_axis_direction" Code="111" Type="Vector" DefaultValue="Vector::x_axis()" />
+      <Field Name="mleader_plane_y_axis_direction" Code="112" Type="Vector" DefaultValue="Vector::y_axis()" />
+      <Field Name="mleader_plane_normal_reversed" Code="297" Type="bool" DefaultValue="false" ReadConverter="as_bool({})" WriteConverter="as_i16({})" />
       <Field Name="vertex" Code="10" Type="Point" DefaultValue="Point::origin()" CodeOverrides="10,20,30" />
       <Field Name="break_point_index" Code="90" Type="i32" DefaultValue="0" />
       

@@ -1097,6 +1097,52 @@ pub enum TextAttachmentDirection {
 }
 
 enum_from_primitive! {
+/// Text attachment type for MLeader left/right attachment (codes 173, 95, 171).
+///
+/// Controls where the leader line connects to the text vertically.
+#[derive(Clone, Copy, Debug, PartialEq)]
+#[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
+pub enum TextAttachmentType {
+    TopOfTop = 0,
+    MiddleOfTop = 1,
+    Middle = 2,
+    MiddleOfBottom = 3,
+    BottomOfBottom = 4,
+    BottomLine = 5,
+    BottomOfTopLine = 6,
+    BottomOfTop = 7,
+    AllLine = 8,
+    Center = 9,
+    OverlineAndCenter = 10,
+}
+}
+
+/// Property override flag bits for MLeader (code 90 in common properties).
+///
+/// These bits indicate which properties are overridden from the MLeaderStyle.
+pub mod mleader_property_override_flag {
+    pub const LEADER_LINE_TYPE: i32 = 1;
+    pub const LEADER_LINE_COLOR: i32 = 2;
+    pub const LEADER_LINE_TYPE_ID: i32 = 4;
+    pub const LEADER_LINE_WEIGHT: i32 = 8;
+    pub const ENABLE_LANDING: i32 = 16;
+    pub const LANDING_GAP: i32 = 32;
+    pub const ENABLE_DOGLEG: i32 = 64;
+    pub const DOGLEG_LENGTH: i32 = 128;
+    pub const ARROWHEAD_ID: i32 = 256;
+    pub const ARROWHEAD_SIZE: i32 = 512;
+    pub const CONTENT_TYPE: i32 = 1024;
+    pub const TEXT_STYLE_ID: i32 = 2048;
+    pub const TEXT_LEFT_ATTACHMENT_TYPE: i32 = 4096;
+    pub const TEXT_ANGLE_TYPE: i32 = 8192;
+    pub const TEXT_ALIGNMENT_TYPE: i32 = 16384;
+    pub const TEXT_COLOR: i32 = 32768;
+    pub const TEXT_HEIGHT: i32 = 65536;
+    pub const ENABLE_FRAME_TEXT: i32 = 131072;
+    pub const DEFAULT_MTEXT: i32 = 262144;
+}
+
+enum_from_primitive! {
 #[derive(Clone, Copy, Debug, PartialEq)]
 #[cfg_attr(feature = "serialize", derive(serde::Serialize, serde::Deserialize))]
 pub enum TextDirection {

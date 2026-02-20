@@ -54,8 +54,14 @@ fn add_mleader_common_properties(pairs: &mut Vec<CodePair>, mleader: &MLeader) {
         pairs.push(CodePair::new_str(343, &mleader.text_style_id));
     }
 
-    pairs.push(CodePair::new_i16(173, mleader.text_left_attachment_type));
-    pairs.push(CodePair::new_i16(95, mleader.text_right_attachment_type));
+    pairs.push(CodePair::new_i16(
+        173,
+        mleader.text_left_attachment_type as i16,
+    ));
+    pairs.push(CodePair::new_i16(
+        95,
+        mleader.text_right_attachment_type as i16,
+    ));
     pairs.push(CodePair::new_i16(174, mleader.text_angle_type));
     pairs.push(CodePair::new_i16(175, mleader.text_alignment_type));
     pairs.push(CodePair::new_i32(
@@ -69,10 +75,10 @@ fn add_mleader_common_properties(pairs: &mut Vec<CodePair>, mleader: &MLeader) {
     // pairs.push(CodePair::new_i32(93, mleader.block_content_color));
     // pairs.push(CodePair::new_f64(10, mleader.block_content_scale));
     // pairs.push(CodePair::new_f64(43, mleader.block_content_rotation));
-    // pairs.push(CodePair::new_i16(
-    // 176,
-    // mleader.block_content_connection_type,
-    // ));
+    pairs.push(CodePair::new_i16(
+        176,
+        mleader.block_content_connection_type,
+    ));
     pairs.push(CodePair::new_i16(
         293,
         as_i16(mleader.enable_annotation_scale),
@@ -86,7 +92,7 @@ fn add_mleader_common_properties(pairs: &mut Vec<CodePair>, mleader: &MLeader) {
     // if !mleader.block_attribute_id.is_empty() {
     // pairs.push(CodePair::new_str(330, &mleader.block_attribute_id));
     // }
-    // pairs.push(CodePair::new_i16(177, mleader.block_attribute_index));
+    pairs.push(CodePair::new_i16(177, mleader.block_attribute_index));
     // pairs.push(CodePair::new_f64(44, mleader.block_attribute_width));
     // if !mleader.block_attribute_text_string.is_empty() {
     // pairs.push(CodePair::new_str(302, &mleader.block_attribute_text_string));
@@ -96,15 +102,18 @@ fn add_mleader_common_properties(pairs: &mut Vec<CodePair>, mleader: &MLeader) {
         as_i16(mleader.text_direction_negative),
     ));
     pairs.push(CodePair::new_i16(178, mleader.text_align_in_ipe));
-    pairs.push(CodePair::new_i16(179, mleader.text_attachment_point));
-    pairs.push(CodePair::new_i16(271, mleader.text_attachment_direction));
+    pairs.push(CodePair::new_i16(179, mleader.text_attachment_point as i16));
+    pairs.push(CodePair::new_i16(
+        271,
+        mleader.text_attachment_direction as i16,
+    ));
     pairs.push(CodePair::new_i16(
         272,
-        mleader.bottom_text_attachment_direction,
+        mleader.bottom_text_attachment_direction as i16,
     ));
     pairs.push(CodePair::new_i16(
         273,
-        mleader.top_text_attachment_direction,
+        mleader.top_text_attachment_direction as i16,
     ));
 }
 
@@ -128,6 +137,19 @@ fn add_mleader_content_properties(pairs: &mut Vec<CodePair>, mleader: &MLeader) 
     pairs.push(CodePair::new_f64(41, mleader.text_height));
     pairs.push(CodePair::new_f64(140, mleader.arrow_head_size));
     pairs.push(CodePair::new_f64(145, mleader.landing_gap));
+    // Codes 174-177 in CONTEXT_DATA are not in the Autodesk DXF spec.
+    // Reverse-engineered from AutoCAD-generated DXF files. AutoCAD writes and
+    // expects these codes; without them, text box alignment breaks for left doglegs.
+    pairs.push(CodePair::new_i16(
+        174,
+        mleader.text_left_attachment_type_context as i16,
+    ));
+    pairs.push(CodePair::new_i16(
+        175,
+        mleader.text_right_attachment_type_context as i16,
+    ));
+    pairs.push(CodePair::new_i16(176, mleader.text_angle_type_context));
+    pairs.push(CodePair::new_i16(177, mleader.text_alignment_type_context));
     pairs.push(CodePair::new_i16(290, as_i16(mleader.has_m_text)));
     pairs.push(CodePair::new_str(304, &mleader.default_text_contents));
     pairs.push(CodePair::new_f64(11, mleader.text_normal_direction.x));
@@ -155,7 +177,7 @@ fn add_mleader_text_properties(pairs: &mut Vec<CodePair>, mleader: &MLeader) {
         90,
         mleader.text_color_context.to_mleader_raw_value(),
     ));
-    pairs.push(CodePair::new_i16(171, mleader.text_attachment));
+    pairs.push(CodePair::new_i16(171, mleader.text_attachment as i16));
     pairs.push(CodePair::new_i16(172, mleader.text_flow_direction));
     pairs.push(CodePair::new_i32(
         91,
@@ -209,26 +231,39 @@ fn add_mleader_text_properties(pairs: &mut Vec<CodePair>, mleader: &MLeader) {
     // pairs.push(CodePair::new_f64(47, mleader.block_transformation_matrix));
 
     // MLeader plane origin point
-    // pairs.push(CodePair::new_f64(110, mleader.mleader_plane_origin_point.x));
-    // pairs.push(CodePair::new_f64(
-    //     120,
-    //     mleader.mleader_plane_origin_point.y,
-    // ));
-    // pairs.push(CodePair::new_f64(130, mleader.mleader_plane_origin_point.z));
+    pairs.push(CodePair::new_f64(110, mleader.mleader_plane_origin_point.x));
+    pairs.push(CodePair::new_f64(120, mleader.mleader_plane_origin_point.y));
+    pairs.push(CodePair::new_f64(130, mleader.mleader_plane_origin_point.z));
 
     // MLeader plane x and y axis direction
-    // pairs.push(CodePair::new_f64(
-    //     111,
-    //     mleader.mleader_plane_x_axis_direction.x,
-    // ));
-    // pairs.push(CodePair::new_f64(
-    //     112,
-    //     mleader.mleader_plane_y_axis_direction.x,
-    // ));
-    // pairs.push(CodePair::new_i16(
-    //     297,
-    //     as_i16(mleader.mleader_plane_normal_reversed),
-    // ));
+    pairs.push(CodePair::new_f64(
+        111,
+        mleader.mleader_plane_x_axis_direction.x,
+    ));
+    pairs.push(CodePair::new_f64(
+        121,
+        mleader.mleader_plane_x_axis_direction.y,
+    ));
+    pairs.push(CodePair::new_f64(
+        131,
+        mleader.mleader_plane_x_axis_direction.z,
+    ));
+    pairs.push(CodePair::new_f64(
+        112,
+        mleader.mleader_plane_y_axis_direction.x,
+    ));
+    pairs.push(CodePair::new_f64(
+        122,
+        mleader.mleader_plane_y_axis_direction.y,
+    ));
+    pairs.push(CodePair::new_f64(
+        132,
+        mleader.mleader_plane_y_axis_direction.z,
+    ));
+    pairs.push(CodePair::new_i16(
+        297,
+        as_i16(mleader.mleader_plane_normal_reversed),
+    ));
 }
 
 fn add_mleader_leader_data(pairs: &mut Vec<CodePair>, mleader: &MLeader) {

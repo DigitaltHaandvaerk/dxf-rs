@@ -1596,7 +1596,36 @@ impl Entity {
                         mleader.text_width = pair.assert_f64()?;
                     }
                     171 => {
-                        mleader.text_attachment = pair.assert_i16()?;
+                        mleader.text_attachment = enum_from_number!(
+                            TextAttachmentType,
+                            TopOfTop,
+                            from_i16,
+                            pair.assert_i16()?
+                        );
+                    }
+                    // Codes 174-177: not in Autodesk DXF spec, reverse-engineered from AutoCAD output.
+                    // Required for correct text box alignment (especially left doglegs).
+                    174 => {
+                        mleader.text_left_attachment_type_context = enum_from_number!(
+                            TextAttachmentType,
+                            MiddleOfTop,
+                            from_i16,
+                            pair.assert_i16()?
+                        );
+                    }
+                    175 => {
+                        mleader.text_right_attachment_type_context = enum_from_number!(
+                            TextAttachmentType,
+                            MiddleOfTop,
+                            from_i16,
+                            pair.assert_i16()?
+                        );
+                    }
+                    176 => {
+                        mleader.text_angle_type_context = pair.assert_i16()?;
+                    }
+                    177 => {
+                        mleader.text_alignment_type_context = pair.assert_i16()?;
                     }
                     _ => common.apply_individual_pair(&pair, iter)?,
                 },
@@ -3138,7 +3167,7 @@ mod tests {
                 assert_eq!(mleader.text_height, 500.0);
                 assert_eq!(mleader.text_rotation, 4.444788527204954);
                 assert_eq!(mleader.text_width, 0.0);
-                assert_eq!(mleader.text_attachment, 1);
+                assert_eq!(mleader.text_attachment, TextAttachmentType::MiddleOfTop);
             }
             _ => panic!("expected a MLeader"),
         }
@@ -3363,7 +3392,7 @@ mod tests {
         mleader.text_height = 0.18;
         mleader.text_direction = Vector::new(1.0, 0.0, 0.0); // text reading direction
         mleader.text_normal_direction = Vector::new(0.0, 0.0, 1.0); // text plane normal
-        mleader.text_attachment = 1;
+        mleader.text_attachment = TextAttachmentType::MiddleOfTop;
         mleader.vertices = vec![
             Point::new(0.0, 0.0, 0.0), // ONLY the arrow start point
         ];
@@ -3440,10 +3469,10 @@ mod tests {
                 // CodePair::new_i32(93, 256), // block_content_color
                 // CodePair::new_f64(10, 1.0), // block_content_scale
                 // CodePair::new_f64(43, 0.0), // block_content_rotation
-                // CodePair::new_i16(176, 0),  // block_content_connection_type
+                CodePair::new_i16(176, 0), // block_content_connection_type
                 CodePair::new_i16(293, 0), // enable_annotation_scale
                 CodePair::new_i32(94, 0),  // arrowhead_index
-                // CodePair::new_i16(177, 0),  // block_attribute_index
+                CodePair::new_i16(177, 0), // block_attribute_index
                 // CodePair::new_f64(44, 0.0), // block_attribute_width
                 CodePair::new_i16(294, 0), // text_direction_negative
                 CodePair::new_i16(178, 0), // text_align_in_ipe
@@ -3461,38 +3490,43 @@ mod tests {
                 CodePair::new_f64(41, 0.18),  // text_height
                 CodePair::new_f64(140, 0.18), // arrow_head_size
                 CodePair::new_f64(145, 0.14), // landing_gap
-                CodePair::new_i16(290, 1),    // has_m_text
+                // Codes 174-177: not in DXF spec, reverse-engineered from AutoCAD output
+                CodePair::new_i16(174, 1), // text_left_attachment_type_context
+                CodePair::new_i16(175, 1), // text_right_attachment_type_context
+                CodePair::new_i16(176, 0), // text_angle_type_context
+                CodePair::new_i16(177, 0), // text_alignment_type_context
+                CodePair::new_i16(290, 1), // has_m_text
                 CodePair::new_str(304, "Great MLEADER content\nTest"), // default_text_contents
-                CodePair::new_f64(11, 0.0),   // text_normal_direction.x
-                CodePair::new_f64(21, 0.0),   // text_normal_direction.y
-                CodePair::new_f64(31, 1.0),   // text_normal_direction.z
-                CodePair::new_f64(12, 2.94),  // text_location.x
-                CodePair::new_f64(22, 1.0),   // text_location.y
-                CodePair::new_f64(32, 0.0),   // text_location.z
-                CodePair::new_f64(13, 1.0),   // text_direction.x
-                CodePair::new_f64(23, 0.0),   // text_direction.y
-                CodePair::new_f64(33, 0.0),   // text_direction.z
-                CodePair::new_f64(42, 0.0),   // text_rotation
-                CodePair::new_f64(43, 0.0),   // text_width
-                CodePair::new_f64(44, 0.0),   // text_height_context
-                CodePair::new_f64(45, 1.0),   // text_line_spacing_factor
-                CodePair::new_i16(170, 1),    // text_line_spacing_style
+                CodePair::new_f64(11, 0.0), // text_normal_direction.x
+                CodePair::new_f64(21, 0.0), // text_normal_direction.y
+                CodePair::new_f64(31, 1.0), // text_normal_direction.z
+                CodePair::new_f64(12, 2.94), // text_location.x
+                CodePair::new_f64(22, 1.0), // text_location.y
+                CodePair::new_f64(32, 0.0), // text_location.z
+                CodePair::new_f64(13, 1.0), // text_direction.x
+                CodePair::new_f64(23, 0.0), // text_direction.y
+                CodePair::new_f64(33, 0.0), // text_direction.z
+                CodePair::new_f64(42, 0.0), // text_rotation
+                CodePair::new_f64(43, 0.0), // text_width
+                CodePair::new_f64(44, 0.0), // text_height_context
+                CodePair::new_f64(45, 1.0), // text_line_spacing_factor
+                CodePair::new_i16(170, 1), // text_line_spacing_style
                 CodePair::new_i32(90, -1073741824), // text_color_context
-                CodePair::new_i16(171, 1),    // text_attachment
-                CodePair::new_i16(172, 1),    // text_flow_direction
+                CodePair::new_i16(171, 1), // text_attachment
+                CodePair::new_i16(172, 1), // text_flow_direction
                 CodePair::new_i32(91, -1073741824), // text_background_color
-                CodePair::new_f64(141, 1.5),  // text_background_scale_factor
-                CodePair::new_i32(92, 0),     // text_background_transparency
-                CodePair::new_i16(291, 0),    // is_text_background_color_on
-                CodePair::new_i16(292, 0),    // is_text_background_fill_on
-                CodePair::new_i16(173, 0),    // text_column_type
-                CodePair::new_i16(293, 0),    // use_text_auto_height
-                CodePair::new_f64(142, 0.0),  // text_column_width
-                CodePair::new_f64(143, 0.0),  // text_column_gutter_width
-                CodePair::new_i16(294, 0),    // text_column_flow_reversed
-                CodePair::new_f64(144, 0.0),  // text_column_height
-                CodePair::new_i16(295, 0),    // text_use_word_break
-                CodePair::new_i16(296, 0),    // has_block
+                CodePair::new_f64(141, 1.5), // text_background_scale_factor
+                CodePair::new_i32(92, 0),  // text_background_transparency
+                CodePair::new_i16(291, 0), // is_text_background_color_on
+                CodePair::new_i16(292, 0), // is_text_background_fill_on
+                CodePair::new_i16(173, 0), // text_column_type
+                CodePair::new_i16(293, 0), // use_text_auto_height
+                CodePair::new_f64(142, 0.0), // text_column_width
+                CodePair::new_f64(143, 0.0), // text_column_gutter_width
+                CodePair::new_i16(294, 0), // text_column_flow_reversed
+                CodePair::new_f64(144, 0.0), // text_column_height
+                CodePair::new_i16(295, 0), // text_use_word_break
+                CodePair::new_i16(296, 0), // has_block
                 // CodePair::new_f64(14, 0.0),   // block_content_normal_direction.x
                 // CodePair::new_f64(24, 0.0),   // block_content_normal_direction.y
                 // CodePair::new_f64(34, 0.0),   // block_content_normal_direction.z
@@ -3503,14 +3537,17 @@ mod tests {
                 // CodePair::new_f64(46, 0.0),   // block_content_rotation_context
                 // CodePair::new_i32(93, 256),   // block_content_color_context
                 // CodePair::new_f64(47, 0.0),   // block_transformation_matrix
-                // CodePair::new_f64(110, 0.0),  // mleader_plane_origin_point.x
-                // CodePair::new_f64(111, 1.0),  // mleader_plane_x_axis_direction.x
-                // CodePair::new_f64(112, 0.0),  // mleader_plane_y_axis_direction.x
-                // CodePair::new_i16(297, 0),    // mleader_plane_normal_reversed
-                // CodePair::new_f64(10, 0.0),   // vertex.x
-                // CodePair::new_f64(20, 0.0),   // vertex.y
-                // CodePair::new_f64(30, 0.0),   // vertex.z
-                CodePair::new_i32(90, 0), // break_point_index
+                CodePair::new_f64(110, 0.0), // mleader_plane_origin_point.x
+                CodePair::new_f64(120, 0.0), // mleader_plane_origin_point.y
+                CodePair::new_f64(130, 0.0), // mleader_plane_origin_point.z
+                CodePair::new_f64(111, 1.0), // mleader_plane_x_axis_direction.x
+                CodePair::new_f64(121, 0.0), // mleader_plane_x_axis_direction.y
+                CodePair::new_f64(131, 0.0), // mleader_plane_x_axis_direction.z
+                CodePair::new_f64(112, 0.0), // mleader_plane_y_axis_direction.x
+                CodePair::new_f64(122, 1.0), // mleader_plane_y_axis_direction.y
+                CodePair::new_f64(132, 0.0), // mleader_plane_y_axis_direction.z
+                CodePair::new_i16(297, 0),   // mleader_plane_normal_reversed
+                CodePair::new_i32(90, 0),    // break_point_index
                 // LEADER Section
                 CodePair::new_str(302, "LEADER{"),
                 // MLeader Leader Node Group Codes
@@ -3559,6 +3596,600 @@ mod tests {
         let output_path = format!("{}/mleader_basic.dxf", output_folder);
         drawing.save_file(&output_path).unwrap();
         println!("MLeader written to {}", output_path);
+    }
+
+    #[test]
+    fn write_mleader_left_dogleg_text_attachment() {
+        // A left dogleg MLeader needs specific text attachment values
+        // to prevent the text box from overlapping the dogleg/leader line.
+        // Key differences from right dogleg:
+        //   - text_attachment = 3 (right-aligned, text extends leftward)
+        //   - text_attachment_point = 3 (top-right anchor)
+        //   - property_override_flag includes bit 18 (kDefaultMText = 262144)
+        let mut drawing = Drawing::new();
+        drawing.header.version = AcadVersion::R2018;
+        let mut mleader = MLeader::default();
+        mleader.content_type = MLeaderContentType::MTextContent;
+        mleader.enable_landing = true;
+        mleader.enable_dogleg = true;
+        mleader.has_m_text = true;
+        mleader.enable_frame_text = true;
+
+        // Left dogleg configuration
+        mleader.dogleg_vector = Vector::new(-1.0, 0.0, 0.0);
+        mleader.has_set_dogleg_vector = true;
+        mleader.dogleg_length = 0.3;
+        mleader.dogleg_length_leader = 0.3;
+
+        // Text attachment values for left dogleg (from working AutoCAD file)
+        mleader.text_attachment = TextAttachmentType::MiddleOfBottom;
+        mleader.text_attachment_point = AttachmentPoint::TopRight;
+        mleader.property_override_flag = mleader_property_override_flag::CONTENT_TYPE
+            | mleader_property_override_flag::DEFAULT_MTEXT;
+
+        // Text content
+        mleader.default_text_contents = "WELLID1\\PØ750.0 mm\\PDK: 41.77\\PBK: 39.22".to_string();
+        mleader.text_height = 0.1;
+        mleader.text_direction = Vector::new(1.0, 0.0, 0.0);
+        mleader.text_normal_direction = Vector::new(0.0, 0.0, 1.0);
+
+        // Positioning (from working DXF)
+        mleader.content_base_point = Point::new(676383.8675381044, 6147229.036478234, 0.0);
+        mleader.text_location = Point::new(676384.7226813513, 6147229.036478234, 0.0);
+        mleader.last_leader_line_point = Point::new(676385.1626813513, 6147229.036478234, 0.0);
+        mleader.has_set_last_leader_line_point = true;
+
+        mleader.landing_gap = 0.14;
+        mleader.arrow_head_size = 0.36;
+        mleader.content_scale = 1.0;
+
+        mleader.vertices = vec![Point::new(676387.9240000001, 6147225.642999998, 0.0)];
+
+        drawing.add_entity(Entity {
+            common: EntityCommon {
+                layer: "TA_G_FAL_BronT".to_string(),
+                ..Default::default()
+            },
+            specific: EntityType::MLeader(mleader),
+        });
+
+        // Verify text_attachment = 3 in CONTEXT_DATA section
+        assert_contains_pairs(
+            &drawing,
+            vec![
+                CodePair::new_str(300, "CONTEXT_DATA{"),
+                CodePair::new_f64(40, 1.0), // content_scale
+            ],
+        );
+
+        // Verify text_attachment = MiddleOfBottom (3) in context data text properties
+        assert_contains_pairs(
+            &drawing,
+            vec![
+                CodePair::new_i16(171, TextAttachmentType::MiddleOfBottom as i16),
+                CodePair::new_i16(172, 1), // text_flow_direction
+            ],
+        );
+
+        // Verify text_attachment_point = TopRight (3) in common properties
+        assert_contains_pairs(
+            &drawing,
+            vec![
+                CodePair::new_i16(179, AttachmentPoint::TopRight as i16),
+                CodePair::new_i16(271, TextAttachmentDirection::Horizontal as i16),
+                CodePair::new_i16(272, BottomTextAttachmentDirection::Center as i16),
+                CodePair::new_i16(273, TopTextAttachmentDirection::Center as i16),
+            ],
+        );
+
+        // Verify property_override_flag includes DEFAULT_MTEXT (bit 18)
+        assert_contains_pairs(
+            &drawing,
+            vec![
+                CodePair::new_i32(
+                    90,
+                    mleader_property_override_flag::CONTENT_TYPE
+                        | mleader_property_override_flag::DEFAULT_MTEXT,
+                ),
+                CodePair::new_i16(170, 1), // leader_line_type
+            ],
+        );
+
+        // Verify dogleg vector is left-pointing
+        assert_contains_pairs(
+            &drawing,
+            vec![
+                CodePair::new_f64(11, -1.0), // dogleg_vector.x = -1 (left)
+                CodePair::new_f64(21, 0.0),  // dogleg_vector.y
+                CodePair::new_f64(31, 0.0),  // dogleg_vector.z
+            ],
+        );
+    }
+
+    #[test]
+    fn write_mleader_right_dogleg_text_attachment() {
+        // Right dogleg uses the default text attachment values.
+        let mut drawing = Drawing::new();
+        drawing.header.version = AcadVersion::R2018;
+        let mut mleader = MLeader::default();
+        mleader.content_type = MLeaderContentType::MTextContent;
+        mleader.enable_landing = true;
+        mleader.enable_dogleg = true;
+        mleader.has_m_text = true;
+
+        // Right dogleg configuration
+        mleader.dogleg_vector = Vector::new(1.0, 0.0, 0.0);
+        mleader.has_set_dogleg_vector = true;
+        mleader.dogleg_length = 0.3;
+        mleader.dogleg_length_leader = 0.3;
+
+        // Right dogleg text attachment defaults
+        mleader.text_attachment = TextAttachmentType::MiddleOfTop;
+        mleader.text_attachment_point = AttachmentPoint::TopLeft;
+
+        mleader.default_text_contents = "Test".to_string();
+        mleader.text_height = 0.18;
+        mleader.text_direction = Vector::new(1.0, 0.0, 0.0);
+        mleader.text_normal_direction = Vector::new(0.0, 0.0, 1.0);
+
+        mleader.content_base_point = Point::new(2.8, 1.0, 0.0);
+        mleader.text_location = Point::new(2.94, 1.0, 0.0);
+        mleader.last_leader_line_point = Point::new(2.5, 1.0, 0.0);
+        mleader.has_set_last_leader_line_point = true;
+
+        mleader.landing_gap = 0.14;
+        mleader.arrow_head_size = 0.18;
+        mleader.content_scale = 1.0;
+
+        mleader.vertices = vec![Point::new(0.0, 0.0, 0.0)];
+
+        drawing.add_entity(Entity {
+            common: EntityCommon {
+                layer: "Test".to_string(),
+                ..Default::default()
+            },
+            specific: EntityType::MLeader(mleader),
+        });
+
+        // Verify text_attachment = MiddleOfTop (1) in context data
+        assert_contains_pairs(
+            &drawing,
+            vec![
+                CodePair::new_i16(171, TextAttachmentType::MiddleOfTop as i16),
+                CodePair::new_i16(172, 1), // text_flow_direction
+            ],
+        );
+
+        // Verify text_attachment_point = TopLeft (1) in common properties
+        assert_contains_pairs(
+            &drawing,
+            vec![
+                CodePair::new_i16(179, AttachmentPoint::TopLeft as i16),
+                CodePair::new_i16(271, TextAttachmentDirection::Horizontal as i16),
+            ],
+        );
+
+        // Verify dogleg vector is right-pointing
+        assert_contains_pairs(
+            &drawing,
+            vec![
+                CodePair::new_f64(11, 1.0), // dogleg_vector.x = 1 (right)
+                CodePair::new_f64(21, 0.0),
+                CodePair::new_f64(31, 0.0),
+            ],
+        );
+    }
+
+    #[test]
+    fn read_mleader_left_dogleg_text_attachment() {
+        // Read an MLeader with left dogleg attachment values from the working DXF
+        let entity = read_entity(
+            "MULTILEADER",
+            vec![
+                CodePair::new_str(100, "AcDbEntity"),
+                CodePair::new_str(8, "TA_G_FAL_BronT"),
+                CodePair::new_str(100, "AcDbMLeader"),
+                CodePair::new_i16(270, 2),
+                CodePair::new_str(300, "CONTEXT_DATA{"),
+                CodePair::new_f64(40, 1.0),
+                CodePair::new_f64(10, 676383.8675381044),
+                CodePair::new_f64(20, 6147229.036478234),
+                CodePair::new_f64(30, 0.0),
+                CodePair::new_f64(41, 0.1),
+                CodePair::new_f64(140, 0.36),
+                CodePair::new_f64(145, 0.14),
+                CodePair::new_i16(174, 0),
+                CodePair::new_i16(175, 0),
+                CodePair::new_i16(176, 2),
+                CodePair::new_i16(177, 1),
+                CodePair::new_i16(290, 1),
+                CodePair::new_str(304, "WELLID1\\PØ750.0 mm\\PDK: 41.77\\PBK: 39.22"),
+                CodePair::new_f64(11, 0.0),
+                CodePair::new_f64(21, 0.0),
+                CodePair::new_f64(31, 1.0),
+                CodePair::new_f64(12, 676384.7226813513),
+                CodePair::new_f64(22, 6147229.036478234),
+                CodePair::new_f64(32, 0.0),
+                CodePair::new_f64(13, 1.0),
+                CodePair::new_f64(23, 0.0),
+                CodePair::new_f64(33, 0.0),
+                CodePair::new_f64(42, 0.0),
+                CodePair::new_f64(43, 0.0),
+                CodePair::new_f64(44, 0.0),
+                CodePair::new_f64(45, 1.0),
+                CodePair::new_i16(170, 1),
+                CodePair::new_i32(90, -1073741824),
+                CodePair::new_i16(171, 3), // text_attachment = 3 (right-aligned)
+                CodePair::new_i16(172, 1),
+                CodePair::new_i32(91, -1073741824),
+                CodePair::new_f64(141, 1.5),
+                CodePair::new_i32(92, 0),
+                CodePair::new_i16(291, 0),
+                CodePair::new_i16(292, 0),
+                CodePair::new_i16(173, 0),
+                CodePair::new_i16(293, 0),
+                CodePair::new_f64(142, 0.0),
+                CodePair::new_f64(143, 0.0),
+                CodePair::new_i16(294, 0),
+                CodePair::new_i16(295, 0),
+                CodePair::new_i16(296, 0),
+                CodePair::new_f64(110, 0.0),
+                CodePair::new_f64(120, 0.0),
+                CodePair::new_f64(130, 0.0),
+                CodePair::new_f64(111, 1.0),
+                CodePair::new_f64(121, 0.0),
+                CodePair::new_f64(131, 0.0),
+                CodePair::new_f64(112, 0.0),
+                CodePair::new_f64(122, 1.0),
+                CodePair::new_f64(132, 0.0),
+                CodePair::new_i16(297, 0),
+                CodePair::new_str(302, "LEADER{"),
+                CodePair::new_i16(290, 1),
+                CodePair::new_i16(291, 1),
+                CodePair::new_f64(10, 676385.1626813513),
+                CodePair::new_f64(20, 6147229.036478234),
+                CodePair::new_f64(30, 0.0),
+                CodePair::new_f64(11, -1.0), // dogleg_vector.x = -1 (LEFT)
+                CodePair::new_f64(21, 0.0),
+                CodePair::new_f64(31, 0.0),
+                CodePair::new_i32(90, 0),
+                CodePair::new_f64(40, 0.3),
+                CodePair::new_str(304, "LEADER_LINE{"),
+                CodePair::new_f64(10, 676387.9240000001),
+                CodePair::new_f64(20, 6147225.642999998),
+                CodePair::new_f64(30, 0.0),
+                CodePair::new_i32(91, 0),
+                CodePair::new_str(305, "}"),
+                CodePair::new_i16(271, 0),
+                CodePair::new_str(303, "}"),
+                CodePair::new_i16(272, 9),
+                CodePair::new_i16(273, 9),
+                CodePair::new_str(301, "}"),
+                CodePair::new_i32(90, 263168), // property_override_flag with kDefaultMText
+                CodePair::new_i16(170, 1),
+                CodePair::new_i32(91, -1073741824),
+                CodePair::new_i16(171, -1),
+                CodePair::new_i16(290, 1),
+                CodePair::new_i16(291, 1),
+                CodePair::new_f64(41, 0.3),
+                CodePair::new_f64(42, 0.18),
+                CodePair::new_i16(172, 2),
+                CodePair::new_i16(173, 1),
+                CodePair::new_i32(95, 1),
+                CodePair::new_i16(174, 0),
+                CodePair::new_i16(175, 0),
+                CodePair::new_i32(92, -1073741824),
+                CodePair::new_i16(292, 1),
+                CodePair::new_i32(93, -1073741824),
+                CodePair::new_f64(10, 1.0),
+                CodePair::new_f64(20, 1.0),
+                CodePair::new_f64(30, 1.0),
+                CodePair::new_f64(43, 0.0),
+                CodePair::new_i16(176, 1),
+                CodePair::new_i16(293, 0),
+                CodePair::new_i16(294, 0),
+                CodePair::new_i16(178, 0),
+                CodePair::new_i16(179, 3), // text_attachment_point = 3 (top-right)
+                CodePair::new_f64(45, 1.0),
+                CodePair::new_i16(271, 0),
+                CodePair::new_i16(272, 9),
+                CodePair::new_i16(273, 9),
+                CodePair::new_i16(295, 1),
+            ],
+        );
+
+        match entity.specific {
+            EntityType::MLeader(ref mleader) => {
+                // Left dogleg
+                assert_eq!(mleader.dogleg_vector, Vector::new(-1.0, 0.0, 0.0));
+
+                // Text attachment properties for left dogleg
+                assert_eq!(
+                    mleader.text_attachment,
+                    TextAttachmentType::MiddleOfBottom,
+                    "text_attachment should be MiddleOfBottom for left dogleg"
+                );
+
+                // Text content
+                assert_eq!(
+                    mleader.default_text_contents,
+                    "WELLID1\\PØ750.0 mm\\PDK: 41.77\\PBK: 39.22"
+                );
+                assert_eq!(mleader.content_type, MLeaderContentType::MTextContent);
+
+                // Positioning
+                assert_eq!(
+                    mleader.text_location,
+                    Point::new(676384.7226813513, 6147229.036478234, 0.0)
+                );
+                assert_eq!(
+                    mleader.last_leader_line_point,
+                    Point::new(676385.1626813513, 6147229.036478234, 0.0)
+                );
+            }
+            _ => panic!("expected a MLeader"),
+        }
+    }
+
+    #[test]
+    fn write_mleader_property_override_flag_with_default_mtext() {
+        // Verify property_override_flag with DEFAULT_MTEXT bit is written correctly
+        let mut drawing = Drawing::new();
+        drawing.header.version = AcadVersion::R2018;
+        let mut mleader = MLeader::default();
+        mleader.content_type = MLeaderContentType::MTextContent;
+        mleader.enable_landing = true;
+        mleader.enable_dogleg = true;
+        mleader.has_m_text = true;
+
+        // Set property_override_flag with CONTENT_TYPE + DEFAULT_MTEXT
+        mleader.property_override_flag = mleader_property_override_flag::CONTENT_TYPE
+            | mleader_property_override_flag::DEFAULT_MTEXT;
+
+        // Left dogleg with proper attachment
+        mleader.dogleg_vector = Vector::new(-1.0, 0.0, 0.0);
+        mleader.has_set_dogleg_vector = true;
+        mleader.dogleg_length = 0.3;
+        mleader.dogleg_length_leader = 0.3;
+        mleader.text_attachment = TextAttachmentType::MiddleOfBottom;
+        mleader.text_attachment_point = AttachmentPoint::TopRight;
+
+        mleader.default_text_contents = "Test".to_string();
+        mleader.text_height = 0.1;
+        mleader.text_direction = Vector::new(1.0, 0.0, 0.0);
+        mleader.text_normal_direction = Vector::new(0.0, 0.0, 1.0);
+        mleader.content_base_point = Point::new(1.0, 1.0, 0.0);
+        mleader.text_location = Point::new(1.5, 1.0, 0.0);
+        mleader.last_leader_line_point = Point::new(2.0, 1.0, 0.0);
+        mleader.has_set_last_leader_line_point = true;
+        mleader.landing_gap = 0.14;
+        mleader.arrow_head_size = 0.18;
+        mleader.content_scale = 1.0;
+        mleader.vertices = vec![Point::new(3.0, 0.0, 0.0)];
+
+        drawing.add_entity(Entity {
+            common: EntityCommon {
+                layer: "Test".to_string(),
+                ..Default::default()
+            },
+            specific: EntityType::MLeader(mleader),
+        });
+
+        // Verify property_override_flag = CONTENT_TYPE | DEFAULT_MTEXT
+        assert_contains_pairs(
+            &drawing,
+            vec![
+                CodePair::new_i32(
+                    90,
+                    mleader_property_override_flag::CONTENT_TYPE
+                        | mleader_property_override_flag::DEFAULT_MTEXT,
+                ),
+                CodePair::new_i16(170, 1), // leader_line_type
+            ],
+        );
+
+        // Verify text_attachment = MiddleOfBottom in context data
+        assert_contains_pairs(
+            &drawing,
+            vec![
+                CodePair::new_i16(171, TextAttachmentType::MiddleOfBottom as i16),
+                CodePair::new_i16(172, 1), // text_flow_direction
+            ],
+        );
+
+        // Verify text_attachment_point = TopRight in common properties
+        assert_contains_pairs(
+            &drawing,
+            vec![
+                CodePair::new_i16(179, AttachmentPoint::TopRight as i16),
+                CodePair::new_i16(271, TextAttachmentDirection::Horizontal as i16),
+                CodePair::new_i16(272, BottomTextAttachmentDirection::Center as i16),
+                CodePair::new_i16(273, TopTextAttachmentDirection::Center as i16),
+            ],
+        );
+    }
+
+    #[test]
+    fn write_mleader_block_content_connection_type() {
+        // Verify block_content_connection_type (code 176) is written in common properties
+        let mut drawing = Drawing::new();
+        drawing.header.version = AcadVersion::R2018;
+        let mut mleader = MLeader::default();
+        mleader.content_type = MLeaderContentType::MTextContent;
+        mleader.enable_landing = true;
+        mleader.enable_dogleg = true;
+        mleader.has_m_text = true;
+        mleader.block_content_connection_type = 1;
+        mleader.default_text_contents = "Test".to_string();
+        mleader.text_height = 0.1;
+        mleader.text_direction = Vector::new(1.0, 0.0, 0.0);
+        mleader.text_normal_direction = Vector::new(0.0, 0.0, 1.0);
+        mleader.content_base_point = Point::new(1.0, 1.0, 0.0);
+        mleader.text_location = Point::new(1.5, 1.0, 0.0);
+        mleader.last_leader_line_point = Point::new(2.0, 1.0, 0.0);
+        mleader.has_set_last_leader_line_point = true;
+        mleader.has_set_dogleg_vector = true;
+        mleader.landing_gap = 0.14;
+        mleader.arrow_head_size = 0.18;
+        mleader.content_scale = 1.0;
+        mleader.vertices = vec![Point::new(3.0, 0.0, 0.0)];
+
+        drawing.add_entity(Entity {
+            common: EntityCommon {
+                layer: "Test".to_string(),
+                ..Default::default()
+            },
+            specific: EntityType::MLeader(mleader),
+        });
+
+        // Verify block_content_connection_type = 1 in common properties
+        assert_contains_pairs(
+            &drawing,
+            vec![
+                CodePair::new_i16(292, 0), // enable_frame_text
+                CodePair::new_i16(176, 1), // block_content_connection_type
+                CodePair::new_i16(293, 0), // enable_annotation_scale
+            ],
+        );
+    }
+
+    #[test]
+    fn write_mleader_block_attribute_index() {
+        // Verify block_attribute_index (code 177) is written in common properties
+        let mut drawing = Drawing::new();
+        drawing.header.version = AcadVersion::R2018;
+        let mut mleader = MLeader::default();
+        mleader.content_type = MLeaderContentType::MTextContent;
+        mleader.enable_landing = true;
+        mleader.enable_dogleg = true;
+        mleader.has_m_text = true;
+        mleader.block_attribute_index = 2;
+        mleader.default_text_contents = "Test".to_string();
+        mleader.text_height = 0.1;
+        mleader.text_direction = Vector::new(1.0, 0.0, 0.0);
+        mleader.text_normal_direction = Vector::new(0.0, 0.0, 1.0);
+        mleader.content_base_point = Point::new(1.0, 1.0, 0.0);
+        mleader.text_location = Point::new(1.5, 1.0, 0.0);
+        mleader.last_leader_line_point = Point::new(2.0, 1.0, 0.0);
+        mleader.has_set_last_leader_line_point = true;
+        mleader.has_set_dogleg_vector = true;
+        mleader.landing_gap = 0.14;
+        mleader.arrow_head_size = 0.18;
+        mleader.content_scale = 1.0;
+        mleader.vertices = vec![Point::new(3.0, 0.0, 0.0)];
+
+        drawing.add_entity(Entity {
+            common: EntityCommon {
+                layer: "Test".to_string(),
+                ..Default::default()
+            },
+            specific: EntityType::MLeader(mleader),
+        });
+
+        // Verify block_attribute_index = 2 in common properties
+        assert_contains_pairs(
+            &drawing,
+            vec![
+                CodePair::new_i32(94, 0),  // arrowhead_index
+                CodePair::new_i16(177, 2), // block_attribute_index
+                CodePair::new_i16(294, 0), // text_direction_negative
+            ],
+        );
+    }
+
+    #[test]
+    fn generate_mleader_left_dogleg_dxf_file() {
+        // Generates a DXF file with a left-dogleg MLeader for testing in AutoCAD
+        let mut drawing = Drawing::new();
+        drawing.header.version = AcadVersion::R2018;
+
+        let mut mleader = MLeader::default();
+
+        // Content type
+        mleader.content_type = MLeaderContentType::MTextContent;
+
+        // Property override flag with DEFAULT_MTEXT
+        mleader.property_override_flag = mleader_property_override_flag::CONTENT_TYPE
+            | mleader_property_override_flag::DEFAULT_MTEXT;
+
+        // Leader settings
+        mleader.leader_line_type = MLeaderLineType::Straight;
+        mleader.enable_landing = true;
+        mleader.enable_dogleg = true;
+        mleader.dogleg_length = 0.3;
+        mleader.arrowhead_size = 0.18;
+
+        // Text attachment for LEFT dogleg
+        mleader.text_left_attachment_type = TextAttachmentType::MiddleOfTop;
+        mleader.text_right_attachment_type = TextAttachmentType::MiddleOfTop;
+        mleader.text_attachment_point = AttachmentPoint::TopRight;
+        mleader.text_attachment_direction = TextAttachmentDirection::Horizontal;
+        mleader.bottom_text_attachment_direction = BottomTextAttachmentDirection::Center;
+        mleader.top_text_attachment_direction = TopTextAttachmentDirection::Center;
+        mleader.enable_frame_text = true;
+
+        // Context data - content properties
+        mleader.content_scale = 1.0;
+        mleader.content_base_point = Point::new(5.0, 5.0, 0.0);
+        mleader.text_height = 0.18;
+        mleader.arrow_head_size = 0.18;
+        mleader.landing_gap = 0.14;
+        // Codes 174-177: not in DXF spec, reverse-engineered from AutoCAD output.
+        // Required for correct text box alignment on left doglegs.
+        mleader.text_left_attachment_type_context = TextAttachmentType::TopOfTop;
+        mleader.text_right_attachment_type_context = TextAttachmentType::TopOfTop;
+        mleader.text_angle_type_context = 2;
+        mleader.text_alignment_type_context = 1;
+        mleader.has_m_text = true;
+        mleader.default_text_contents = "LEFT DOGLEG\\PTest Text".to_string();
+        mleader.text_normal_direction = Vector::new(0.0, 0.0, 1.0);
+
+        // Context data - text properties
+        mleader.text_location = Point::new(5.0, 5.0, 0.0);
+        mleader.text_direction = Vector::new(1.0, 0.0, 0.0);
+        mleader.text_attachment = TextAttachmentType::MiddleOfBottom;
+        mleader.text_line_spacing_factor = 1.0;
+        mleader.text_background_scale_factor = 1.5;
+
+        // Plane data
+        mleader.mleader_plane_origin_point = Point::new(0.0, 0.0, 0.0);
+        mleader.mleader_plane_x_axis_direction = Vector::new(1.0, 0.0, 0.0);
+        mleader.mleader_plane_y_axis_direction = Vector::new(0.0, 1.0, 0.0);
+        mleader.mleader_plane_normal_reversed = false;
+
+        // Leader node
+        mleader.has_set_last_leader_line_point = true;
+        mleader.has_set_dogleg_vector = true;
+        mleader.last_leader_line_point = Point::new(5.44, 5.0, 0.0);
+        mleader.dogleg_vector = Vector::new(-1.0, 0.0, 0.0); // LEFT dogleg
+        mleader.dogleg_length_leader = 0.3;
+
+        // Leader line vertices (arrow start point)
+        mleader.vertices = vec![Point::new(8.0, 3.0, 0.0)];
+
+        drawing.add_entity(Entity {
+            common: EntityCommon {
+                layer: "0".to_string(),
+                ..Default::default()
+            },
+            specific: EntityType::MLeader(mleader),
+        });
+
+        // Save to temp dir for manual AutoCAD testing
+        let path = std::env::temp_dir().join("mleader_left_dogleg_test.dxf");
+        drawing.save_file(&path).unwrap();
+
+        // Verify the file was created and contains expected content
+        let loaded = Drawing::load_file(&path).unwrap();
+        let entities: Vec<_> = loaded.entities().collect();
+        assert_eq!(entities.len(), 1);
+        match entities[0].specific {
+            EntityType::MLeader(ref ml) => {
+                assert_eq!(ml.default_text_contents, "LEFT DOGLEG\\PTest Text");
+                assert_eq!(ml.content_type, MLeaderContentType::MTextContent);
+            }
+            _ => panic!("expected MLeader"),
+        }
     }
 
     #[test]
